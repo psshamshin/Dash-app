@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C c:/Pasha/DashReact remote -v)",
+      "Bash(gh auth:*)",
+      "Bash(git -C c:/Pasha/DashReact log --oneline)"
+    ]
+  }
+}
