@@ -1,4 +1,8 @@
-export default function ProfileScreen() {
+export default function ProfileScreen({ user, onLogout }) {
+  const displayName = user?.name || 'Guest'
+  const initials    = user?.avatar || displayName.slice(0,2).toUpperCase()
+  const verified    = user?.verified
+
   const stats = [
     { val: '47', lbl: 'Trips' },
     { val: '4.8 ⭐', lbl: 'Rating' },
@@ -33,21 +37,22 @@ export default function ProfileScreen() {
           fontSize: '1.5rem', fontWeight: 700, color: '#fff',
           marginBottom: 12,
         }}>
-          PS
+          {initials}
         </div>
         <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text)', marginBottom: 3 }}>
-          Pasha S.
+          {displayName}
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--text-low)', marginBottom: 12 }}>
-          Member since 2024
+          {user?.email || 'Member'}
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 5,
           padding: '5px 14px', borderRadius: '100px',
-          background: 'var(--green-dim)',
-          fontSize: '0.76rem', fontWeight: 600, color: 'var(--green)',
+          background: verified ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+          fontSize: '0.76rem', fontWeight: 600,
+          color: verified ? 'var(--green)' : 'var(--text-low)',
         }}>
-          ✓ Identity verified
+          {verified ? '✓ Identity verified' : '⚠ Not verified'}
         </div>
       </div>
 
@@ -74,7 +79,7 @@ export default function ProfileScreen() {
 
       {/* Sign out */}
       <div style={{ padding: '16px 16px 28px' }}>
-        <button className="btn btn-secondary btn-full" style={{ color: 'var(--red)', fontSize: '0.88rem' }}>
+        <button className="btn btn-secondary btn-full" style={{ color: 'var(--red)', fontSize: '0.88rem' }} onClick={onLogout}>
           Sign out
         </button>
       </div>

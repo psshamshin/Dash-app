@@ -1,6 +1,7 @@
-import { myListings } from '../data/cars.js'
-
-export default function ListingsScreen({ onCarTap }) {
+export default function ListingsScreen({ cars, onCarTap, onAddCar }) {
+  const myListings = cars.filter(c => c.isOwn) .length > 0
+    ? cars.filter(c => c.isOwn)
+    : cars.slice(0, 2)
   return (
     <div className="screen fade-up">
       {/* Header */}
@@ -33,7 +34,7 @@ export default function ListingsScreen({ onCarTap }) {
       {/* Section header */}
       <div className="section-header px-20 mb-12">
         <h3>My listings</h3>
-        <button className="btn btn-secondary" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
+        <button className="btn btn-secondary" style={{ padding: '7px 14px', fontSize: '0.8rem' }} onClick={onAddCar}>
           + Add car
         </button>
       </div>

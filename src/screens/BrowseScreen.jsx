@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { cars, categories } from '../data/cars.js'
+import { categories } from '../data/cars.js'
 
-export default function BrowseScreen({ onCarTap }) {
+export default function BrowseScreen({ cars, onCarTap }) {
   const [cat, setCat]       = useState('All')
   const [search, setSearch] = useState('')
   const [pickup]            = useState('24.04.2025')
@@ -15,6 +15,7 @@ export default function BrowseScreen({ onCarTap }) {
   })
 
   const popular = cars.slice(0, 2)
+
 
   return (
     <div className="screen fade-up">
