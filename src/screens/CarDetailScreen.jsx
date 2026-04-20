@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-export default function CarDetailScreen({ car, role, onBack, onChat }) {
+export default function CarDetailScreen({ car, role, user, onBack, onChat }) {
   const [liked, setLiked] = useState(false)
 
-  const isOwnCar = car.isOwn || role === 'owner'
+  const isOwnCar = (user && car.owner === user.name) || (car.isOwn && role === 'owner')
 
   function handleBook() {
     onChat({
