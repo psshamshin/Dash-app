@@ -17,11 +17,14 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
   const [transmission, setTransmission] = useState('Automatic')
   const [description,  setDescription]  = useState('')
   const [publishing,   setPublishing]   = useState(false)
-  const fileRef = useRef(null)
+  const cameraRef  = useRef(null)
+  const galleryRef = useRef(null)
 
   function handlePhoto(e) {
     const file = e.target.files[0]
     if (!file) return
+    // reset so the same file can be re-selected after clearing
+    e.target.value = ''
     const reader = new FileReader()
     reader.onload = ev => setPhoto(ev.target.result)
     reader.readAsDataURL(file)
@@ -85,41 +88,60 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
 
       <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 40 }}>
         {/* Photo upload */}
-        <div
-          onClick={() => fileRef.current?.click()}
-          style={{
-            height: 220, cursor: 'pointer', position: 'relative',
-            background: photo ? 'transparent' : '#111',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: 10,
-            borderBottom: '1px solid rgba(255,255,255,0.07)',
-          }}
-        >
-          {photo ? (
-            <>
-              <img src={photo} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-              <div style={{
-                position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <div style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', padding: '8px 16px', borderRadius: 100, fontSize: '0.8rem', color: '#fff', fontWeight: 500 }}>
-                  📷 Change photo
+        <div style={{
+          position: 'relative', background: '#111',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          {/* Preview */}
+          <div style={{ height: 220, position: 'relative', overflow: 'hidden' }}>
+            {photo ? (
+              <img src={photo} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
+                  📷
                 </div>
+                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.35)' }}>No photo yet</div>
               </div>
-            </>
-          ) : (
-            <>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
-                📷
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>Add car photo</div>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 3 }}>Tap to upload from gallery</div>
-              </div>
-            </>
-          )}
+            )}
+          </div>
+
+          {/* Two action buttons */}
+          <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <button
+              onClick={() => cameraRef.current?.click()}
+              style={{
+                flex: 1, padding: '13px', border: 'none', borderRight: '1px solid rgba(255,255,255,0.07)',
+                background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.7)',
+                fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                transition: 'background .15s',
+              }}
+              onTouchStart={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+              onTouchEnd={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+            >
+              📷 Take photo
+            </button>
+            <button
+              onClick={() => galleryRef.current?.click()}
+              style={{
+                flex: 1, padding: '13px', border: 'none',
+                background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.7)',
+                fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                transition: 'background .15s',
+              }}
+              onTouchStart={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+              onTouchEnd={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+            >
+              🖼️ From gallery
+            </button>
+          </div>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
+
+        {/* Hidden file inputs */}
+        <input ref={cameraRef}  type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
+        <input ref={galleryRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
 
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Brand + Model */}
