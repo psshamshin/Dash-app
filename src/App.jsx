@@ -98,8 +98,8 @@ export default function App() {
     <>
       {content}
 
-      {/* Floating role toggle — always on top of every screen */}
-      <div className="role-float">
+      {/* Floating role toggle — hidden on booking screens */}
+      <div className="role-float" style={{ display: (screen === 'car' || screen === 'chat') ? 'none' : 'flex' }}>
         <button
           className={`role-float-btn ${role === 'renter' ? 'active' : ''}`}
           onClick={() => handleRoleChange('renter')}

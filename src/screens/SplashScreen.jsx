@@ -3,6 +3,7 @@ export default function SplashScreen({ onStart }) {
     <div className="splash fade-up">
       {/* Hero — dark full-bleed */}
       <div className="splash-hero">
+        <div className="splash-glow" />
         <span className="splash-car">🚗</span>
       </div>
 

@@ -18,7 +18,7 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
       {/* App bar */}
-      <div className="app-bar" style={{ background: 'var(--bg)' }}>
+      <div className="app-bar">
         <button className="icon-btn" onClick={onBack}>←</button>
         <span className="app-bar-title">Car detail</span>
         <button
@@ -33,7 +33,7 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 96 }}>
         {/* Hero */}
-        <div className="car-detail-hero" style={{ background: car.colorBg, margin: '0 16px', borderRadius: 'var(--radius)' }}>
+        <div className="car-detail-hero" style={{ background: car.colorBg }}>
           <span className="car-detail-emoji">{car.emoji}</span>
           {!car.isAvailable && (
             <span className="badge badge-surface" style={{
