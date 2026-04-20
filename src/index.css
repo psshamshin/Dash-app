@@ -163,6 +163,10 @@ input::placeholder { color: var(--text-low); }
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-4px); opacity: 1; }
+}
 
 /* ── Spec grid ── */
 .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

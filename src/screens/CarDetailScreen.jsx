@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
-export default function CarDetailScreen({ car, onBack, onChat }) {
+export default function CarDetailScreen({ car, role, onBack, onChat }) {
   const [liked, setLiked] = useState(false)
+
+  const isOwnCar = car.isOwn || role === 'owner'
 
   function handleBook() {
     onChat({
@@ -11,6 +13,7 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
       otherInit: car.ownerInit,
       otherColor: car.color,
       currentPrice: car.price,
+      negotiationEnabled: true,
       messages: [],
     })
   }
@@ -20,27 +23,48 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
       {/* App bar */}
       <div className="app-bar">
         <button className="icon-btn" onClick={onBack}>←</button>
-        <span className="app-bar-title">Car detail</span>
-        <button
-          className="icon-btn"
-          onClick={() => setLiked(l => !l)}
-          style={{ color: liked ? '#ef4444' : undefined }}
-        >
-          {liked ? '❤️' : '🤍'}
-        </button>
+        <span className="app-bar-title">{isOwnCar ? 'My listing' : 'Car detail'}</span>
+        {!isOwnCar && (
+          <button
+            className="icon-btn"
+            onClick={() => setLiked(l => !l)}
+            style={{ color: liked ? '#ef4444' : undefined }}
+          >
+            {liked ? '❤️' : '🤍'}
+          </button>
+        )}
+        {isOwnCar && <div style={{ width: 36 }} />}
       </div>
 
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 96 }}>
         {/* Hero */}
-        <div className="car-detail-hero" style={{ background: car.colorBg }}>
-          <span className="car-detail-emoji">{car.emoji}</span>
+        <div className="car-detail-hero" style={{ background: car.colorBg, position: 'relative' }}>
+          {car.photo ? (
+            <img
+              src={car.photo}
+              alt={`${car.brand} ${car.model}`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+            />
+          ) : (
+            <span className="car-detail-emoji">{car.emoji}</span>
+          )}
           {!car.isAvailable && (
             <span className="badge badge-surface" style={{
-              position: 'absolute', bottom: 12, left: 12,
-              background: 'rgba(239,68,68,.1)', color: 'var(--red)',
+              position: 'absolute', bottom: 12, left: 12, zIndex: 2,
+              background: 'rgba(239,68,68,.12)', color: 'var(--red)',
             }}>
               Currently rented
+            </span>
+          )}
+          {isOwnCar && (
+            <span style={{
+              position: 'absolute', top: 12, right: 12, zIndex: 2,
+              padding: '4px 12px', borderRadius: 100,
+              background: 'rgba(249,115,22,0.2)', border: '1px solid rgba(249,115,22,0.4)',
+              fontSize: '0.72rem', fontWeight: 700, color: '#f97316',
+            }}>
+              Your car
             </span>
           )}
         </div>
@@ -64,8 +88,8 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '12px', marginBottom: 16,
             background: 'var(--surface)',
+            border: '1px solid var(--border)',
             borderRadius: 'var(--radius-sm)',
-            boxShadow: 'var(--shadow-sm)',
           }}>
             <div style={{
               width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
@@ -100,8 +124,16 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
             </div>
           </div>
 
+          {/* Description */}
+          {car.description && (
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ marginBottom: 10 }}>Description</h3>
+              <p style={{ fontSize: '0.88rem', lineHeight: 1.6 }}>{car.description}</p>
+            </div>
+          )}
+
           {/* Last activity */}
-          {car.activity.length > 0 && (
+          {car.activity?.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ marginBottom: 10 }}>Last activity</h3>
               <div className="card" style={{ padding: '0 14px' }}>
@@ -124,11 +156,9 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
             <h3 style={{ marginBottom: 10 }}>Location</h3>
             <div className="card" style={{ overflow: 'hidden' }}>
               <div style={{
-                height: 110,
-                background: 'var(--surface-2)',
+                height: 110, background: 'var(--surface-2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '2.2rem',
-                borderBottom: '1px solid var(--border)',
+                fontSize: '2.2rem', borderBottom: '1px solid var(--border)',
               }}>
                 🗺️
               </div>
@@ -152,9 +182,24 @@ export default function CarDetailScreen({ car, onBack, onChat }) {
           <div className="detail-price-main">฿{car.price.toLocaleString()}</div>
           <div className="detail-price-sub">per day · negotiate welcome</div>
         </div>
-        <button className="btn btn-primary" style={{ fontSize: '0.9rem', padding: '13px 24px' }} onClick={handleBook}>
-          Book now
-        </button>
+
+        {isOwnCar ? (
+          <div style={{
+            padding: '10px 20px', borderRadius: 100,
+            background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)',
+            fontSize: '0.82rem', color: 'var(--text-low)', fontWeight: 500,
+          }}>
+            Your listing
+          </div>
+        ) : (
+          <button
+            className="btn btn-primary"
+            style={{ fontSize: '0.9rem', padding: '13px 24px' }}
+            onClick={handleBook}
+          >
+            Book now
+          </button>
+        )}
       </div>
     </div>
   )

@@ -114,6 +114,7 @@ export default function App() {
     content = (
       <CarDetailScreen
         car={selectedCar}
+        role={role}
         onBack={() => setScreen('main')}
         onChat={handleChatTap}
       />

@@ -118,7 +118,10 @@ function PopularCard({ car, onClick }) {
   return (
     <div className="car-card" style={{ minWidth: 180, maxWidth: 180 }} onClick={onClick}>
       <div className="car-card-image" style={{ background: car.colorBg }}>
-        <span className="car-card-emoji">{car.emoji}</span>
+        {car.photo
+          ? <img src={car.photo} alt={car.model} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+          : <span className="car-card-emoji">{car.emoji}</span>
+        }
         <span style={{
           position: 'absolute', top: 8, right: 8,
           background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)',
@@ -154,8 +157,11 @@ function PopularCard({ car, onClick }) {
 function ListItem({ car, onClick }) {
   return (
     <div className="car-list-item" onClick={onClick}>
-      <div className="car-list-thumb" style={{ background: car.colorBg }}>
-        <span>{car.emoji}</span>
+      <div className="car-list-thumb" style={{ background: car.colorBg, overflow: 'hidden', position: 'relative' }}>
+        {car.photo
+          ? <img src={car.photo} alt={car.model} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+          : <span>{car.emoji}</span>
+        }
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem', marginBottom: 2 }}>

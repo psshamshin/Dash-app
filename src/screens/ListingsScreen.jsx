@@ -45,8 +45,11 @@ export default function ListingsScreen({ cars, onCarTap, onAddCar }) {
           const isRented = i === 1
           return (
             <div key={car.id} className="listing-tile" onClick={() => onCarTap(car)}>
-              <div className="listing-thumb" style={{ background: car.colorBg }}>
-                <span>{car.emoji}</span>
+              <div className="listing-thumb" style={{ background: car.colorBg, overflow: 'hidden', position: 'relative' }}>
+                {car.photo
+                  ? <img src={car.photo} alt={car.model} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                  : <span>{car.emoji}</span>
+                }
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)', marginBottom: 3 }}>
