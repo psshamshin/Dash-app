@@ -94,25 +94,29 @@ export default function App() {
     )
   }
 
+  const hideToggle = screen === 'car' || screen === 'chat'
+
   return (
-    <>
+    <div style={{ width: '100%', minHeight: '100dvh', position: 'relative' }}>
       {content}
 
       {/* Floating role toggle — hidden on booking screens */}
-      <div className="role-float" style={{ display: (screen === 'car' || screen === 'chat') ? 'none' : 'flex' }}>
-        <button
-          className={`role-float-btn ${role === 'renter' ? 'active' : ''}`}
-          onClick={() => handleRoleChange('renter')}
-        >
-          Renter
-        </button>
-        <button
-          className={`role-float-btn ${role === 'owner' ? 'active' : ''}`}
-          onClick={() => handleRoleChange('owner')}
-        >
-          Owner
-        </button>
-      </div>
-    </>
+      {!hideToggle && (
+        <div className="role-float">
+          <button
+            className={`role-float-btn ${role === 'renter' ? 'active' : ''}`}
+            onClick={() => handleRoleChange('renter')}
+          >
+            Renter
+          </button>
+          <button
+            className={`role-float-btn ${role === 'owner' ? 'active' : ''}`}
+            onClick={() => handleRoleChange('owner')}
+          >
+            Owner
+          </button>
+        </div>
+      )}
+    </div>
   )
 }

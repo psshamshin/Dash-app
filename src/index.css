@@ -33,16 +33,13 @@ html, body {
 }
 
 #root {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  width: 100%;
   min-height: 100dvh;
 }
 
 .app-shell {
   position: relative;
   width: 100%;
-  max-width: 430px;
   min-height: 100dvh;
   background: var(--bg);
   overflow: hidden;
