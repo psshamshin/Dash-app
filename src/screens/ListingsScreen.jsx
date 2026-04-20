@@ -1,37 +1,55 @@
-export default function ListingsScreen({ cars, onCarTap, onAddCar }) {
-  const myListings = cars.filter(c => c.isOwn) .length > 0
-    ? cars.filter(c => c.isOwn)
-    : cars.slice(0, 2)
+import { useState, useEffect } from 'react'
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebase.js'
+
+export default function ListingsScreen({ user, onCarTap, onAddCar }) {
+  const [listings, setListings] = useState([])
+
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(
+      collection(db, 'cars'),
+      where('ownerUid', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    )
+    return onSnapshot(q, snap => {
+      setListings(snap.docs.map(d => d.data()))
+    }, err => console.error('Listings load error:', err))
+  }, [user?.uid])
+
+  const totalEarnings = listings.reduce((sum, c) => sum + c.price * c.trips, 0)
+  const totalTrips    = listings.reduce((sum, c) => sum + c.trips, 0)
+  const avgRating     = listings.length
+    ? (listings.reduce((sum, c) => sum + c.rating, 0) / listings.length).toFixed(1)
+    : '—'
+
   return (
     <div className="screen fade-up">
-      {/* Header */}
       <div className="app-bar">
         <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>My Cars</span>
         <div style={{ flex: 1 }} />
         <button className="icon-btn">🔔</button>
       </div>
 
-      {/* Earnings card */}
       <div className="earnings-card mb-20">
-        <div className="earnings-label">Monthly earnings</div>
-        <div className="earnings-amount">฿18,400</div>
+        <div className="earnings-label">Total earnings</div>
+        <div className="earnings-amount">฿{totalEarnings.toLocaleString()}</div>
         <div className="earnings-stats">
           <div className="earnings-stat">
-            <div className="earnings-stat-val">2</div>
+            <div className="earnings-stat-val">{listings.filter(c => c.isAvailable).length}</div>
             <div className="earnings-stat-lbl">Active</div>
           </div>
           <div className="earnings-stat">
-            <div className="earnings-stat-val">47</div>
+            <div className="earnings-stat-val">{totalTrips}</div>
             <div className="earnings-stat-lbl">Total trips</div>
           </div>
           <div className="earnings-stat">
-            <div className="earnings-stat-val">4.8 ⭐</div>
+            <div className="earnings-stat-val">{avgRating} ⭐</div>
             <div className="earnings-stat-lbl">Rating</div>
           </div>
         </div>
       </div>
 
-      {/* Section header */}
       <div className="section-header px-20 mb-12">
         <h3>My listings</h3>
         <button className="btn btn-secondary" style={{ padding: '7px 14px', fontSize: '0.8rem' }} onClick={onAddCar}>
@@ -39,11 +57,14 @@ export default function ListingsScreen({ cars, onCarTap, onAddCar }) {
         </button>
       </div>
 
-      {/* Listings */}
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {myListings.map((car, i) => {
-          const isRented = i === 1
-          return (
+      {listings.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-low)' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🚗</div>
+          <p>No listings yet.<br />Tap "+ Add car" to post your first car.</p>
+        </div>
+      ) : (
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {listings.map(car => (
             <div key={car.id} className="listing-tile" onClick={() => onCarTap(car)}>
               <div className="listing-thumb" style={{ background: car.colorBg, overflow: 'hidden', position: 'relative' }}>
                 {car.photo
@@ -59,12 +80,10 @@ export default function ListingsScreen({ cars, onCarTap, onAddCar }) {
                   ฿{car.price.toLocaleString()}/day
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span className={`badge ${isRented ? 'badge-green' : 'badge-surface'}`}>
-                    {isRented ? '● Rented' : '○ Available'}
+                  <span className={`badge ${car.isAvailable ? 'badge-surface' : 'badge-green'}`}>
+                    {car.isAvailable ? '○ Available' : '● Rented'}
                   </span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>
-                    {car.trips} trips
-                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>{car.trips} trips</span>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
@@ -72,9 +91,9 @@ export default function ListingsScreen({ cars, onCarTap, onAddCar }) {
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-low)' }}>›</span>
               </div>
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

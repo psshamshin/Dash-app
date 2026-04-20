@@ -1,39 +1,51 @@
-import { useState } from 'react'
-import { categories } from '../data/cars.js'
+import { useState, useEffect } from 'react'
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebase.js'
+import { cars as seedCars, categories } from '../data/cars.js'
 
-export default function BrowseScreen({ cars, onCarTap }) {
-  const [cat, setCat]       = useState('All')
-  const [search, setSearch] = useState('')
-  const [pickup]            = useState('24.04.2025')
-  const [ret]               = useState('28.04.2025')
+export default function BrowseScreen({ user, onCarTap }) {
+  const [cat, setCat]         = useState('All')
+  const [search, setSearch]   = useState('')
+  const [firestoreCars, setFirestoreCars] = useState([])
+  const [pickup]              = useState('24.04.2025')
+  const [ret]                 = useState('28.04.2025')
 
-  const filtered = cars.filter(c => {
+  useEffect(() => {
+    const q = query(collection(db, 'cars'), orderBy('createdAt', 'desc'))
+    return onSnapshot(q, snap => {
+      setFirestoreCars(snap.docs.map(d => d.data()))
+    }, err => console.error('Cars load error:', err))
+  }, [])
+
+  const allCars = [...firestoreCars, ...seedCars]
+
+  const filtered = allCars.filter(c => {
     const matchCat = cat === 'All' || c.category === cat
     const q = search.toLowerCase()
-    const matchQ = !q || c.brand.toLowerCase().includes(q) || c.model.toLowerCase().includes(q) || c.location.toLowerCase().includes(q)
+    const matchQ = !q ||
+      c.brand.toLowerCase().includes(q) ||
+      c.model.toLowerCase().includes(q) ||
+      c.location.toLowerCase().includes(q)
     return matchCat && matchQ
   })
 
-  const popular = cars.slice(0, 2)
-
+  const popular = allCars.slice(0, 4)
 
   return (
     <div className="screen fade-up">
-      {/* Header */}
       <div className="app-bar">
         <span className="logo">Dash<span>.</span></span>
         <div style={{ flex: 1 }} />
         <button className="icon-btn">🔔</button>
       </div>
 
-      {/* Search form */}
       <div className="search-form">
         <div className="input-wrap" style={{ marginBottom: 10 }}>
           <span className="input-icon">🔍</span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Pick-up and return location"
+            placeholder="Search by car, brand or location"
           />
         </div>
         <div className="date-row">
@@ -51,24 +63,18 @@ export default function BrowseScreen({ cars, onCarTap }) {
         </button>
       </div>
 
-      {/* Filter chips */}
       <div className="h-scroll px-20 mb-20">
         {categories.map(c => (
           <button
             key={c}
             onClick={() => setCat(c)}
             style={{
-              padding: '7px 16px',
-              borderRadius: '100px',
-              border: 'none',
+              padding: '7px 16px', borderRadius: '100px', border: 'none',
               background: cat === c ? 'var(--accent)' : 'var(--surface)',
               color: cat === c ? '#fff' : 'var(--text-mid)',
-              fontFamily: 'inherit',
-              fontSize: '0.8rem',
+              fontFamily: 'inherit', fontSize: '0.8rem',
               fontWeight: cat === c ? 600 : 400,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all .15s',
+              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s',
               boxShadow: 'var(--shadow-sm)',
             }}
           >
@@ -77,7 +83,6 @@ export default function BrowseScreen({ cars, onCarTap }) {
         ))}
       </div>
 
-      {/* Most popular */}
       <div className="px-20 mb-20">
         <div className="section-header">
           <h3>Most popular</h3>
@@ -90,7 +95,6 @@ export default function BrowseScreen({ cars, onCarTap }) {
         </div>
       </div>
 
-      {/* All listings */}
       <div className="px-20 mb-8">
         <div className="section-header">
           <h3>{cat === 'All' ? 'All cars' : cat}</h3>
@@ -122,28 +126,17 @@ function PopularCard({ car, onClick }) {
           ? <img src={car.photo} alt={car.model} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
           : <span className="car-card-emoji">{car.emoji}</span>
         }
-        <span style={{
-          position: 'absolute', top: 8, right: 8,
-          background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)',
-          borderRadius: '100px', padding: '2px 8px',
-          fontSize: '0.65rem', color: '#fff', fontWeight: 600,
-        }}>
+        <span style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)', borderRadius: '100px', padding: '2px 8px', fontSize: '0.65rem', color: '#fff', fontWeight: 600 }}>
           {car.category}
         </span>
         {!car.isAvailable && (
-          <span style={{
-            position: 'absolute', top: 8, left: 8,
-            background: 'var(--red)', borderRadius: '100px',
-            padding: '2px 8px', fontSize: '0.62rem', color: '#fff', fontWeight: 600,
-          }}>
+          <span style={{ position: 'absolute', top: 8, left: 8, background: 'var(--red)', borderRadius: '100px', padding: '2px 8px', fontSize: '0.62rem', color: '#fff', fontWeight: 600 }}>
             Rented
           </span>
         )}
       </div>
       <div className="car-card-body">
-        <div className="car-card-price">
-          ฿{car.price.toLocaleString()} <span>/ day</span>
-        </div>
+        <div className="car-card-price">฿{car.price.toLocaleString()} <span>/ day</span></div>
         <div className="car-card-name">{car.brand} {car.model}</div>
         <div className="car-card-meta">
           <span style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>📍 {car.location}</span>
@@ -164,23 +157,15 @@ function ListItem({ car, onClick }) {
         }
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem', marginBottom: 2 }}>
-          {car.brand} {car.model}
-        </div>
-        <div style={{ fontSize: '0.78rem', color: 'var(--text-low)', marginBottom: 6 }}>
-          {car.year} · {car.location}
-        </div>
+        <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem', marginBottom: 2 }}>{car.brand} {car.model}</div>
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-low)', marginBottom: 6 }}>{car.year} · {car.location}</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span className="badge badge-accent">฿{car.price.toLocaleString()}/day</span>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>⭐ {car.rating}</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-        <span style={{
-          width: 8, height: 8, borderRadius: '50%',
-          background: car.isAvailable ? 'var(--green)' : 'var(--text-low)',
-          display: 'block',
-        }} />
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: car.isAvailable ? 'var(--green)' : 'var(--text-low)', display: 'block' }} />
         <span style={{ fontSize: '0.8rem', color: 'var(--text-low)' }}>›</span>
       </div>
     </div>

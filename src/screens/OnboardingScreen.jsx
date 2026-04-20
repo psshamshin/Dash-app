@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react'
+import { doc, updateDoc } from 'firebase/firestore'
+import { db } from '../firebase.js'
 
 const STEPS = ['identity', 'verifying', 'done']
 
@@ -16,12 +18,14 @@ export default function OnboardingScreen({ user, onComplete }) {
     reader.readAsDataURL(file)
   }
 
-  function submitDoc() {
+  async function submitDoc() {
     setStep('verifying')
-    setTimeout(() => {
+    setTimeout(async () => {
       setStep('done')
       const updated = { ...user, verified: true }
-      localStorage.setItem('dash_user', JSON.stringify(updated))
+      try {
+        if (user?.uid) await updateDoc(doc(db, 'users', user.uid), { verified: true })
+      } catch (e) { console.error(e) }
       setTimeout(() => onComplete(updated), 1200)
     }, 2200)
   }
@@ -135,7 +139,7 @@ export default function OnboardingScreen({ user, onComplete }) {
             </button>
 
             <button
-              onClick={() => onComplete({ ...user, verified: false })}
+              onClick={() => onComplete(user)}
               style={{
                 marginTop: 12, width: '100%', padding: '13px', borderRadius: 100, border: 'none',
                 background: 'transparent', color: 'rgba(255,255,255,0.25)',

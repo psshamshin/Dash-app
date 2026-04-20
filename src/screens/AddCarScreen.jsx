@@ -1,8 +1,25 @@
 import { useState, useRef } from 'react'
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../firebase.js'
 
 const CATEGORIES = ['Sedan', 'SUV', 'Hatchback', 'Pickup', 'Van', 'Luxury', 'Electric']
 const FUELS      = ['Petrol', 'Diesel', 'Electric', 'Hybrid']
 const TRANS      = ['Automatic', 'Manual']
+
+function resizeImage(dataUrl, maxPx = 900, quality = 0.75) {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width  = Math.round(img.width  * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = dataUrl
+  })
+}
 
 export default function AddCarScreen({ user, onPublish, onBack }) {
   const [photo,        setPhoto]        = useState(null)
@@ -19,30 +36,36 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
   const [publishing,   setPublishing]   = useState(false)
   const fileRef = useRef(null)
 
-  function handlePhoto(e) {
+  async function handlePhoto(e) {
     const file = e.target.files[0]
     if (!file) return
-    // reset so the same file can be re-selected after clearing
     e.target.value = ''
     const reader = new FileReader()
-    reader.onload = ev => setPhoto(ev.target.result)
+    reader.onload = async ev => {
+      const resized = await resizeImage(ev.target.result)
+      setPhoto(resized)
+    }
     reader.readAsDataURL(file)
   }
 
-  function publish(e) {
+  async function publish(e) {
     e.preventDefault()
     if (!brand || !model || !location) return
     setPublishing(true)
-    setTimeout(() => {
+    try {
+      const carRef = doc(collection(db, 'cars'))
       const newCar = {
-        id: Date.now(),
-        brand, model, year: +year,
+        id: carRef.id,
+        brand, model,
+        year: +year,
         price: +price,
-        category, location, seats: +seats,
+        category, location,
+        seats: +seats,
         fuel, transmission,
         fuelUsage: fuel === 'Electric' ? 'N/A' : '9 l/100km',
         owner: user.name,
         ownerInit: user.avatar,
+        ownerUid: user.uid,
         rating: 5.0,
         reviews: 0,
         distance: '0.5 km',
@@ -50,23 +73,26 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
         color: '#f97316',
         colorBg: 'rgba(249,115,22,0.15)',
         emoji: '🚗',
-        photo,
+        photo: photo || null,
         trips: 0,
         isAvailable: true,
         activity: [],
         description,
-        isOwn: true,
+        createdAt: serverTimestamp(),
       }
+      await setDoc(carRef, newCar)
       setPublishing(false)
-      onPublish(newCar)
-    }, 1000)
+      onPublish()
+    } catch (err) {
+      console.error('Publish error:', err)
+      setPublishing(false)
+    }
   }
 
   const canPublish = brand && model && location && !publishing
 
   return (
     <div style={{ minHeight: '100dvh', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '16px 16px 8px', gap: 10, background: '#111', borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.07)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1rem', flexShrink: 0 }}>←</button>
         <span style={{ flex: 1, fontSize: '1rem', fontWeight: 700, color: '#fff' }}>Add your car</span>
@@ -86,7 +112,6 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
       </div>
 
       <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 40 }}>
-        {/* Photo upload — single input, iOS shows native sheet (Take Photo / Library) */}
         <div
           onClick={() => fileRef.current?.click()}
           style={{ position: 'relative', background: '#111', borderBottom: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}
@@ -118,25 +143,21 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
         <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
 
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* Brand + Model */}
           <Row>
             <Field label="Brand"  value={brand}  onChange={setBrand}  placeholder="e.g. Toyota" />
             <Field label="Model"  value={model}  onChange={setModel}  placeholder="e.g. Camry" />
           </Row>
-
-          {/* Year + Price */}
           <Row>
-            <Field label="Year"        value={year}  onChange={setYear}  placeholder="2023" type="number" />
+            <Field label="Year"            value={year}  onChange={setYear}  placeholder="2023" type="number" />
             <Field label="Price / day (฿)" value={price} onChange={setPrice} placeholder="1500"  type="number" />
           </Row>
 
-          {/* Category */}
           <div>
             <Label>Category</Label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
               {CATEGORIES.map(c => (
                 <button key={c} onClick={() => setCategory(c)} style={{
-                  padding: '7px 14px', borderRadius: 100, border: 'none',
+                  padding: '7px 14px', borderRadius: 100,
                   background: category === c ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.06)',
                   color: category === c ? '#f97316' : 'rgba(255,255,255,0.45)',
                   fontFamily: 'inherit', fontSize: '0.8rem', fontWeight: 600,
@@ -149,10 +170,8 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
             </div>
           </div>
 
-          {/* Location */}
           <Field label="Pick-up location" value={location} onChange={setLocation} placeholder="e.g. Bangkok CBD" />
 
-          {/* Specs row */}
           <Row>
             <Field label="Seats" value={seats} onChange={setSeats} placeholder="5" type="number" />
             <div style={{ flex: 1 }}>
@@ -163,13 +182,12 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
             </div>
           </Row>
 
-          {/* Transmission */}
           <div>
             <Label>Transmission</Label>
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               {TRANS.map(t => (
                 <button key={t} onClick={() => setTransmission(t)} style={{
-                  flex: 1, padding: '10px', borderRadius: 100, border: 'none',
+                  flex: 1, padding: '10px', borderRadius: 100,
                   background: transmission === t ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.06)',
                   color: transmission === t ? '#f97316' : 'rgba(255,255,255,0.45)',
                   fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600,
@@ -182,7 +200,6 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <Label>Description (optional)</Label>
             <textarea

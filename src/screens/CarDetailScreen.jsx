@@ -3,19 +3,10 @@ import { useState } from 'react'
 export default function CarDetailScreen({ car, role, user, onBack, onChat }) {
   const [liked, setLiked] = useState(false)
 
-  const isOwnCar = (user && car.owner === user.name) || (car.isOwn && role === 'owner')
+  const isOwnCar = user?.uid && car.ownerUid === user.uid
 
   function handleBook() {
-    onChat({
-      id: `new_${car.id}`,
-      car,
-      otherName: car.owner,
-      otherInit: car.ownerInit,
-      otherColor: car.color,
-      currentPrice: car.price,
-      negotiationEnabled: true,
-      messages: [],
-    })
+    onChat(car)
   }
 
   return (
