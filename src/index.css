@@ -643,6 +643,12 @@ input::placeholder { color: var(--text-low); }
 .h-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
 .h-scroll::-webkit-scrollbar { display: none; }
 
+/* ── Pulse animation for waiting dot ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.85); }
+}
+
 /* ── Floating role toggle ── */
 .role-float {
   position: fixed;

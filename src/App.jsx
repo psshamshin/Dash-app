@@ -76,6 +76,7 @@ export default function App() {
     content = (
       <ChatDetailScreen
         chat={selectedChat}
+        role={role}
         onBack={handleBack}
       />
     )
