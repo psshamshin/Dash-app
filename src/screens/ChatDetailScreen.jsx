@@ -328,7 +328,7 @@ export default function ChatDetailScreen({ chat, user, role = 'renter', onBack }
   const currentRole = iAmOwner ? 'owner' : role
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#0D0D0D' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', position: 'fixed', inset: 0, background: '#0D0D0D' }}>
       {/* App bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: '#111', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <button onClick={onBack} style={{ width: 34, height: 34, borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.07)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.95rem', flexShrink: 0 }}>←</button>
