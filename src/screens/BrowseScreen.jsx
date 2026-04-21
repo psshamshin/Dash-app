@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { cars as seedCars, categories } from '../data/cars.js'
 
@@ -11,9 +11,15 @@ export default function BrowseScreen({ user, onCarTap }) {
   const [ret]                 = useState('28.04.2025')
 
   useEffect(() => {
-    const q = query(collection(db, 'cars'), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, 'cars'))
     return onSnapshot(q, snap => {
-      setFirestoreCars(snap.docs.map(d => d.data()))
+      const all = snap.docs.map(d => d.data())
+      all.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.() || new Date(0)
+        const tb = b.createdAt?.toDate?.() || new Date(0)
+        return tb - ta
+      })
+      setFirestoreCars(all)
     }, err => console.error('Cars load error:', err))
   }, [])
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 export default function ListingsScreen({ user, onCarTap, onAddCar }) {
@@ -9,11 +9,16 @@ export default function ListingsScreen({ user, onCarTap, onAddCar }) {
     if (!user?.uid) return
     const q = query(
       collection(db, 'cars'),
-      where('ownerUid', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('ownerUid', '==', user.uid)
     )
     return onSnapshot(q, snap => {
-      setListings(snap.docs.map(d => d.data()))
+      const all = snap.docs.map(d => d.data())
+      all.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.() || new Date(0)
+        const tb = b.createdAt?.toDate?.() || new Date(0)
+        return tb - ta
+      })
+      setListings(all)
     }, err => console.error('Listings load error:', err))
   }, [user?.uid])
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 const fmtAgo = (d) => {
@@ -17,11 +17,16 @@ export default function ChatsScreen({ user, onChatTap }) {
     if (!user?.uid) return
     const q = query(
       collection(db, 'chats'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('lastMessageTime', 'desc')
+      where('participants', 'array-contains', user.uid)
     )
     return onSnapshot(q, snap => {
-      setChats(snap.docs.map(d => ({ ...d.data(), id: d.id, isReal: true })))
+      const all = snap.docs.map(d => ({ ...d.data(), id: d.id, isReal: true }))
+      all.sort((a, b) => {
+        const ta = a.lastMessageTime?.toDate?.() || new Date(0)
+        const tb = b.lastMessageTime?.toDate?.() || new Date(0)
+        return tb - ta
+      })
+      setChats(all)
     }, err => console.error('Chats load error:', err))
   }, [user?.uid])
 
