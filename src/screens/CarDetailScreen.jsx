@@ -24,7 +24,7 @@ export default function CarDetailScreen({ car, user, onBack, onChat }) {
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 96 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(96px + var(--nav-h))' }}>
         {/* Hero */}
         <div className="car-detail-hero" style={{ background: car.colorBg, position: 'relative' }}>
           {car.photo ? (

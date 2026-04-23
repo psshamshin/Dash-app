@@ -216,14 +216,16 @@ export default function App() {
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           {renderTab()}
         </div>
-        <BottomNav tab={tab} onTabChange={handleTabChange} />
       </div>
     )
   }
 
+  const hideNav = ['auth', 'onboarding', 'add-car', 'chat'].includes(screen)
+
   return (
     <div style={{ width: '100%', minHeight: '100dvh', position: 'relative', background: 'var(--bg)' }}>
       {content}
+      {!hideNav && <BottomNav tab={tab} onTabChange={handleTabChange} />}
     </div>
   )
 }

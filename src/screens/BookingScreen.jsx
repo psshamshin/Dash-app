@@ -89,7 +89,7 @@ export default function BookingScreen({ car, user, onBack, onDone }) {
         <span style={{ flex: 1, fontSize: '1rem', fontWeight: 700, color: 'var(--text)' }}>Confirm Booking</span>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', paddingBottom: 'calc(var(--nav-h) + 32px)', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Car card */}
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px' }}>
