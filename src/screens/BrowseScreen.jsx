@@ -43,6 +43,7 @@ export default function BrowseScreen({ user, onCarTap }) {
     <div className="screen fade-up">
       <div className="app-bar">
         <span className="logo">Dash<span>.</span></span>
+        <span style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-dim)', border: '1px solid var(--accent-mid)', borderRadius: 100, padding: '2px 7px', letterSpacing: '0.04em', marginLeft: 2 }}>beta v0.3</span>
         <div style={{ flex: 1 }} />
         <button className="icon-btn">🔔</button>
       </div>
