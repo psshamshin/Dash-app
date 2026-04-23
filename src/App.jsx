@@ -11,6 +11,7 @@ import ChatDetailScreen  from './screens/ChatDetailScreen.jsx'
 import CarDetailScreen   from './screens/CarDetailScreen.jsx'
 import ProfileScreen     from './screens/ProfileScreen.jsx'
 import AddCarScreen      from './screens/AddCarScreen.jsx'
+import BookingScreen     from './screens/BookingScreen.jsx'
 import BottomNav         from './components/BottomNav.jsx'
 
 export default function App() {
@@ -81,6 +82,11 @@ export default function App() {
 
   async function handleCarBook(car, bookType = 'negotiate') {
     if (!requireAuth()) return
+    if (bookType === 'quick_book') {
+      setSelectedCar(car)
+      setScreen('booking')
+      return
+    }
     if (car.ownerUid && user) {
       const chatId = `${user.uid}_${car.id}`
       const chatRef = doc(db, 'chats', chatId)
@@ -177,6 +183,15 @@ export default function App() {
     content = <OnboardingScreen user={user} onComplete={handleOnboardingComplete} />
   } else if (screen === 'add-car') {
     content = <AddCarScreen user={user} onPublish={handlePublishCar} onBack={() => setScreen('main')} />
+  } else if (screen === 'booking' && selectedCar) {
+    content = (
+      <BookingScreen
+        car={selectedCar}
+        user={user}
+        onBack={() => setScreen('car')}
+        onDone={() => { setScreen('main'); setSelectedCar(null) }}
+      />
+    )
   } else if (screen === 'car' && selectedCar) {
     content = (
       <CarDetailScreen

@@ -183,15 +183,13 @@ export default function CarDetailScreen({ car, user, onBack, onChat }) {
             >
               Quick Book
             </button>
-            {car.negotiationEnabled && (
-              <button
-                className="btn btn-secondary"
-                style={{ fontSize: '0.88rem', padding: '13px 20px' }}
-                onClick={() => onChat(car, 'negotiate')}
-              >
-                Negotiate
-              </button>
-            )}
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: '0.88rem', padding: '13px 20px' }}
+              onClick={() => onChat(car, 'negotiate')}
+            >
+              Negotiate
+            </button>
           </div>
         )}
       </div>
