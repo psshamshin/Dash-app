@@ -174,6 +174,10 @@ export default function CarDetailScreen({ car, user, onBack, onChat }) {
           <div style={{ padding: '10px 20px', borderRadius: 100, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', fontSize: '0.82rem', color: 'var(--text-low)', fontWeight: 500 }}>
             Your listing
           </div>
+        ) : !car.isAvailable ? (
+          <div style={{ padding: '10px 20px', borderRadius: 100, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: '0.82rem', color: '#ef4444', fontWeight: 600 }}>
+            Currently rented
+          </div>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <button

@@ -84,12 +84,22 @@ export default function ListingsScreen({ user, onCarTap, onAddCar }) {
                 <div style={{ fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 600, marginBottom: 6 }}>
                   ฿{car.price.toLocaleString()}/day
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span className={`badge ${car.isAvailable ? 'badge-surface' : 'badge-green'}`}>
-                    {car.isAvailable ? '○ Available' : '● Rented'}
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>{car.trips} trips</span>
-                </div>
+                {car.activeBooking ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span className="badge badge-green" style={{ alignSelf: 'flex-start' }}>● Rented</span>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>
+                      👤 {car.activeBooking.renterName}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>
+                      📅 {car.activeBooking.pickup} → {car.activeBooking.ret}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span className="badge badge-surface">○ Available</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>{car.trips} trips</span>
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
                 <span style={{ fontSize: '0.9rem', color: 'var(--text-low)', cursor: 'pointer' }}>⋯</span>

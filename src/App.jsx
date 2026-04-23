@@ -11,16 +11,18 @@ import ChatDetailScreen  from './screens/ChatDetailScreen.jsx'
 import CarDetailScreen   from './screens/CarDetailScreen.jsx'
 import ProfileScreen     from './screens/ProfileScreen.jsx'
 import AddCarScreen      from './screens/AddCarScreen.jsx'
-import BookingScreen     from './screens/BookingScreen.jsx'
-import BottomNav         from './components/BottomNav.jsx'
+import BookingScreen        from './screens/BookingScreen.jsx'
+import ActiveRentalScreen  from './screens/ActiveRentalScreen.jsx'
+import BottomNav            from './components/BottomNav.jsx'
 
 export default function App() {
   const [user, setUser]                 = useState(null)
   const [screen, setScreen]             = useState('main')
   const [tab, setTab]                   = useState('browse')
   const [selectedCar, setSelectedCar]   = useState(null)
-  const [selectedChat, setSelectedChat] = useState(null)
-  const [theme, setTheme]               = useState(() => localStorage.getItem('dash_theme') || 'dark')
+  const [selectedChat, setSelectedChat]     = useState(null)
+  const [activeRental, setActiveRental]     = useState(null)
+  const [theme, setTheme]                   = useState(() => localStorage.getItem('dash_theme') || 'dark')
 
   // Role is derived from current tab
   const role = tab === 'listings' ? 'owner' : 'renter'
@@ -189,7 +191,15 @@ export default function App() {
         car={selectedCar}
         user={user}
         onBack={() => setScreen('car')}
-        onDone={() => { setScreen('main'); setSelectedCar(null) }}
+        onDone={(rental) => { setActiveRental(rental); setScreen('rental') }}
+      />
+    )
+  } else if (screen === 'rental' && activeRental) {
+    content = (
+      <ActiveRentalScreen
+        rental={activeRental}
+        onBack={() => setScreen('main')}
+        onContactOwner={() => handleCarBook({ ...activeRental, id: activeRental.carId, ownerUid: activeRental.ownerUid, owner: activeRental.ownerName, ownerInit: activeRental.ownerInit }, 'negotiate')}
       />
     )
   } else if (screen === 'car' && selectedCar) {
