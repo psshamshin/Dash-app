@@ -200,7 +200,7 @@ export default function ChatDetailScreen({ chat, user, onBack }) {
   async function sendText(text) {
     if (!text.trim() || !isReal) return
     setInputText('')
-    inputRef.current?.focus()
+    inputRef.current?.blur()
     try {
       await addDoc(collection(db, 'chats', chat.id, 'messages'), {
         type: 'text', text: text.trim(),
