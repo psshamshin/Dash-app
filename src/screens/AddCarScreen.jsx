@@ -32,8 +32,9 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
   const [seats,        setSeats]        = useState('5')
   const [fuel,         setFuel]         = useState('Petrol')
   const [transmission, setTransmission] = useState('Automatic')
-  const [description,  setDescription]  = useState('')
-  const [publishing,   setPublishing]   = useState(false)
+  const [description,        setDescription]        = useState('')
+  const [negotiationEnabled, setNegotiationEnabled] = useState(false)
+  const [publishing,         setPublishing]         = useState(false)
   const fileRef = useRef(null)
 
   async function handlePhoto(e) {
@@ -78,6 +79,7 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
         isAvailable: true,
         activity: [],
         description,
+        negotiationEnabled,
         createdAt: serverTimestamp(),
       }
       await setDoc(carRef, newCar)
@@ -198,6 +200,20 @@ export default function AddCarScreen({ user, onPublish, onBack }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Negotiation toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff', marginBottom: 3 }}>Allow negotiation</div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>Renters can negotiate the price with you</div>
+            </div>
+            <button
+              onClick={() => setNegotiationEnabled(v => !v)}
+              style={{ width: 48, height: 28, borderRadius: 100, border: 'none', cursor: 'pointer', background: negotiationEnabled ? '#f97316' : 'rgba(255,255,255,0.12)', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
+            >
+              <div style={{ position: 'absolute', top: 4, left: negotiationEnabled ? 24 : 4, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+            </button>
           </div>
 
           <div>

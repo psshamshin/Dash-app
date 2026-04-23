@@ -1,13 +1,9 @@
 import { useState } from 'react'
 
-export default function CarDetailScreen({ car, role, user, onBack, onChat }) {
+export default function CarDetailScreen({ car, user, onBack, onChat }) {
   const [liked, setLiked] = useState(false)
 
   const isOwnCar = user?.uid && car.ownerUid === user.uid
-
-  function handleBook() {
-    onChat(car)
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
@@ -175,21 +171,28 @@ export default function CarDetailScreen({ car, role, user, onBack, onChat }) {
         </div>
 
         {isOwnCar ? (
-          <div style={{
-            padding: '10px 20px', borderRadius: 100,
-            background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)',
-            fontSize: '0.82rem', color: 'var(--text-low)', fontWeight: 500,
-          }}>
+          <div style={{ padding: '10px 20px', borderRadius: 100, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', fontSize: '0.82rem', color: 'var(--text-low)', fontWeight: 500 }}>
             Your listing
           </div>
         ) : (
-          <button
-            className="btn btn-primary"
-            style={{ fontSize: '0.9rem', padding: '13px 24px' }}
-            onClick={handleBook}
-          >
-            Book now
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn btn-primary"
+              style={{ fontSize: '0.88rem', padding: '13px 20px' }}
+              onClick={() => onChat(car, 'quick_book')}
+            >
+              Quick Book
+            </button>
+            {car.negotiationEnabled && (
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: '0.88rem', padding: '13px 20px' }}
+                onClick={() => onChat(car, 'negotiate')}
+              >
+                Negotiate
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './firebase.js'
-import SplashScreen      from './screens/SplashScreen.jsx'
 import AuthScreen        from './screens/AuthScreen.jsx'
 import OnboardingScreen  from './screens/OnboardingScreen.jsx'
 import BrowseScreen      from './screens/BrowseScreen.jsx'
@@ -16,39 +15,40 @@ import BottomNav         from './components/BottomNav.jsx'
 
 export default function App() {
   const [user, setUser]                 = useState(null)
-  const [authLoading, setAuthLoading]   = useState(true)
-  const [screen, setScreen]             = useState('splash')
+  const [screen, setScreen]             = useState('main')
   const [tab, setTab]                   = useState('browse')
-  const [role, setRole]                 = useState('renter')
   const [selectedCar, setSelectedCar]   = useState(null)
   const [selectedChat, setSelectedChat] = useState(null)
-  const initialAuthDone = useRef(false)
+  const [theme, setTheme]               = useState(() => localStorage.getItem('dash_theme') || 'dark')
 
-  // ── Firebase auth persistence (handles page reload) ─────────────────────────
+  // Role is derived from current tab
+  const role = tab === 'listings' ? 'owner' : 'renter'
+
+  // Apply theme
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('dash_theme', theme)
+  }, [theme])
+
+  // Firebase auth state
   useEffect(() => {
     return onAuthStateChanged(auth, async (fbUser) => {
-      if (!initialAuthDone.current) {
-        initialAuthDone.current = true
-        if (fbUser) {
-          try {
-            const snap = await getDoc(doc(db, 'users', fbUser.uid))
-            if (snap.exists()) {
-              setUser({ uid: fbUser.uid, ...snap.data() })
-              setScreen('main')
-            }
-          } catch (e) { console.error('Auth load error:', e) }
-        }
-        setAuthLoading(false)
-      } else if (!fbUser) {
+      if (fbUser) {
+        try {
+          const snap = await getDoc(doc(db, 'users', fbUser.uid))
+          if (snap.exists()) {
+            const profile = { uid: fbUser.uid, ...snap.data() }
+            setUser(profile)
+            if (screen === 'auth' || screen === 'onboarding') setScreen('main')
+          }
+        } catch (e) { console.error('Auth load error:', e) }
+      } else {
         setUser(null)
-        setScreen('splash')
-        setTab('browse')
-        setRole('renter')
       }
     })
-  }, [])
+  }, []) // eslint-disable-line
 
-  // ── Auth handlers ───────────────────────────────────────────────────────────
+  // ── Auth ────────────────────────────────────────────────────────────────────
   function handleAuth(profile, isNew) {
     setUser(profile)
     setScreen(isNew ? 'onboarding' : 'main')
@@ -61,16 +61,27 @@ export default function App() {
 
   async function handleLogout() {
     await signOut(auth)
+    setUser(null)
+    setTab('browse')
+    setScreen('main')
+  }
+
+  // ── Guard: redirect to auth if not logged in ─────────────────────────────
+  function requireAuth() {
+    if (!user) { setScreen('auth'); return false }
+    return true
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
-  function handleStart() { setScreen('auth') }
+  function handleCarTap(car) {
+    if (!requireAuth()) return
+    setSelectedCar(car)
+    setScreen('car')
+  }
 
-  function handleCarTap(car) { setSelectedCar(car); setScreen('car') }
-
-  async function handleCarBook(car) {
+  async function handleCarBook(car, bookType = 'negotiate') {
+    if (!requireAuth()) return
     if (car.ownerUid && user) {
-      // Real car with a Firebase owner — create or find Firestore chat
       const chatId = `${user.uid}_${car.id}`
       const chatRef = doc(db, 'chats', chatId)
       try {
@@ -98,19 +109,23 @@ export default function App() {
           })
         }
         const freshSnap = await getDoc(chatRef)
-        setSelectedChat({ id: chatId, ...freshSnap.data(), isReal: true })
+        setSelectedChat({
+          id: chatId,
+          ...freshSnap.data(),
+          isReal: true,
+          bookType,
+        })
       } catch (e) {
         console.error('Chat creation error:', e)
         setSelectedChat({
-          id: chatId, isReal: false,
+          id: chatId, isReal: false, bookType,
           car, otherName: car.owner, otherInit: car.ownerInit,
           otherColor: car.color, currentPrice: car.price, messages: [],
         })
       }
     } else {
-      // Seed / demo car — use auto-reply
       setSelectedChat({
-        id: `new_${car.id}`, isReal: false,
+        id: `new_${car.id}`, isReal: false, bookType,
         car, otherName: car.owner, otherInit: car.ownerInit,
         otherColor: car.color, currentPrice: car.price, messages: [],
       })
@@ -119,6 +134,7 @@ export default function App() {
   }
 
   function handleChatOpen(chat) {
+    if (!requireAuth()) return
     setSelectedChat(chat)
     setScreen('chat')
   }
@@ -131,15 +147,13 @@ export default function App() {
   }
 
   function handleTabChange(newTab) {
-    setTab(newTab); setScreen('main')
-    setSelectedCar(null); setSelectedChat(null)
-  }
-
-  function handleRoleChange(newRole) {
-    setRole(newRole)
-    setTab(newRole === 'owner' ? 'listings' : 'browse')
-    if (!['splash','auth','onboarding'].includes(screen)) setScreen('main')
-    setSelectedCar(null); setSelectedChat(null)
+    if (!user && ['listings', 'chats'].includes(newTab)) {
+      setScreen('auth'); return
+    }
+    setTab(newTab)
+    setScreen('main')
+    setSelectedCar(null)
+    setSelectedChat(null)
   }
 
   function handlePublishCar() {
@@ -147,33 +161,18 @@ export default function App() {
     setTab('listings')
   }
 
-  // ── Active tab ──────────────────────────────────────────────────────────────
-  let activeTab = tab
-  if (role === 'owner' && tab === 'browse') activeTab = 'listings'
-
+  // ── Render tab ──────────────────────────────────────────────────────────────
   function renderTab() {
-    if (activeTab === 'chats')    return <ChatsScreen user={user} onChatTap={handleChatOpen} />
-    if (activeTab === 'profile')  return <ProfileScreen user={user} onLogout={handleLogout} />
-    if (activeTab === 'listings') return (
-      <ListingsScreen user={user} onCarTap={handleCarTap} onAddCar={() => setScreen('add-car')} />
-    )
+    if (tab === 'chats')    return <ChatsScreen user={user} onChatTap={handleChatOpen} />
+    if (tab === 'listings') return <ListingsScreen user={user} onCarTap={handleCarTap} onAddCar={() => setScreen('add-car')} />
+    if (tab === 'profile')  return <ProfileScreen user={user} theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} onLogout={handleLogout} onLogin={() => setScreen('auth')} />
     return <BrowseScreen user={user} onCarTap={handleCarTap} />
   }
 
   // ── Screen routing ──────────────────────────────────────────────────────────
-  if (authLoading) {
-    return (
-      <div style={{ width: '100%', minHeight: '100dvh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(249,115,22,0.2)', borderTopColor: '#f97316', animation: 'spin 0.9s linear infinite' }} />
-      </div>
-    )
-  }
-
   let content
-  if (screen === 'splash') {
-    content = <SplashScreen onStart={handleStart} />
-  } else if (screen === 'auth') {
-    content = <AuthScreen onAuth={handleAuth} onBack={() => setScreen('splash')} />
+  if (screen === 'auth') {
+    content = <AuthScreen onAuth={handleAuth} onBack={() => setScreen('main')} />
   } else if (screen === 'onboarding') {
     content = <OnboardingScreen user={user} onComplete={handleOnboardingComplete} />
   } else if (screen === 'add-car') {
@@ -182,7 +181,6 @@ export default function App() {
     content = (
       <CarDetailScreen
         car={selectedCar}
-        role={role}
         user={user}
         onBack={() => setScreen('main')}
         onChat={handleCarBook}
@@ -203,32 +201,14 @@ export default function App() {
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           {renderTab()}
         </div>
-        <BottomNav tab={activeTab} onTabChange={handleTabChange} />
+        <BottomNav tab={tab} onTabChange={handleTabChange} />
       </div>
     )
   }
 
-  const hideToggle = ['splash','auth','onboarding','add-car','car','chat'].includes(screen)
-
   return (
-    <div style={{ width: '100%', minHeight: '100dvh', position: 'relative' }}>
+    <div style={{ width: '100%', minHeight: '100dvh', position: 'relative', background: 'var(--bg)' }}>
       {content}
-      {!hideToggle && (
-        <div className="role-float">
-          <button
-            className={`role-float-btn ${role === 'renter' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('renter')}
-          >
-            Renter
-          </button>
-          <button
-            className={`role-float-btn ${role === 'owner' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('owner')}
-          >
-            Owner
-          </button>
-        </div>
-      )}
     </div>
   )
 }

@@ -7,8 +7,10 @@ export default function BrowseScreen({ user, onCarTap }) {
   const [cat, setCat]         = useState('All')
   const [search, setSearch]   = useState('')
   const [firestoreCars, setFirestoreCars] = useState([])
-  const [pickup]              = useState('24.04.2025')
-  const [ret]                 = useState('28.04.2025')
+  const today = new Date().toISOString().split('T')[0]
+  const plus4  = new Date(Date.now() + 4 * 864e5).toISOString().split('T')[0]
+  const [pickup, setPickup] = useState(today)
+  const [ret,    setRet]    = useState(plus4)
 
   useEffect(() => {
     const q = query(collection(db, 'cars'))
@@ -56,12 +58,14 @@ export default function BrowseScreen({ user, onCarTap }) {
         </div>
         <div className="date-row">
           <div className="date-field">
-            <div className="date-field-label">Pick-up date</div>
-            <div className="date-field-value">{pickup}</div>
+            <div className="date-field-label">📅 Pick-up date</div>
+            <input type="date" value={pickup} min={today} onChange={e => setPickup(e.target.value)}
+              style={{ marginTop: 4, padding: 0, background: 'transparent', border: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600, outline: 'none', width: '100%' }} />
           </div>
           <div className="date-field">
-            <div className="date-field-label">Return date</div>
-            <div className="date-field-value">{ret}</div>
+            <div className="date-field-label">📅 Return date</div>
+            <input type="date" value={ret} min={pickup || today} onChange={e => setRet(e.target.value)}
+              style={{ marginTop: 4, padding: 0, background: 'transparent', border: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600, outline: 'none', width: '100%' }} />
           </div>
         </div>
         <button className="btn btn-primary btn-full" style={{ marginTop: 12, fontSize: '0.9rem' }}>
