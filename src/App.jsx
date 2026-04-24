@@ -23,6 +23,10 @@ export default function App() {
   const [selectedCar, setSelectedCar]   = useState(null)
   const [selectedChat, setSelectedChat]     = useState(null)
   const [activeRental, setActiveRental]     = useState(null)
+  const today = new Date().toISOString().split('T')[0]
+  const plus4 = new Date(Date.now() + 4 * 864e5).toISOString().split('T')[0]
+  const [searchPickup, setSearchPickup] = useState(today)
+  const [searchRet,    setSearchRet]    = useState(plus4)
   const [theme, setTheme]                   = useState(() => localStorage.getItem('dash_theme') || 'dark')
 
   // Role is derived from current tab
@@ -203,7 +207,7 @@ export default function App() {
     if (tab === 'chats')    return <ChatsScreen user={user} onChatTap={handleChatOpen} />
     if (tab === 'listings') return <ListingsScreen user={user} onCarTap={handleCarTap} onAddCar={() => setScreen('add-car')} />
     if (tab === 'profile')  return <ProfileScreen user={user} theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} onLogout={handleLogout} onLogin={() => setScreen('auth')} onAdmin={() => setScreen('admin')} />
-    return <BrowseScreen user={user} onCarTap={handleCarTap} onRentalTap={r => { setActiveRental(r); setScreen('rental') }} />
+    return <BrowseScreen user={user} onCarTap={handleCarTap} onRentalTap={r => { setActiveRental(r); setScreen('rental') }} pickup={searchPickup} ret={searchRet} onPickupChange={setSearchPickup} onRetChange={setSearchRet} />
   }
 
   // ── Screen routing ──────────────────────────────────────────────────────────
@@ -219,6 +223,8 @@ export default function App() {
       <BookingScreen
         car={selectedCar}
         user={user}
+        initialPickup={searchPickup}
+        initialRet={searchRet}
         onBack={() => setScreen('car')}
         onDone={(rental) => { setActiveRental(rental); setScreen('rental') }}
       />

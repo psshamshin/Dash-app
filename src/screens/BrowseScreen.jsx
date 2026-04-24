@@ -4,15 +4,12 @@ import { db } from '../firebase.js'
 import { cars as seedCars, categories } from '../data/cars.js'
 import { APP_VERSION } from '../version.js'
 
-export default function BrowseScreen({ user, onCarTap, onRentalTap }) {
+export default function BrowseScreen({ user, onCarTap, onRentalTap, pickup, ret, onPickupChange, onRetChange }) {
   const [cat, setCat]         = useState('All')
   const [search, setSearch]   = useState('')
   const [firestoreCars, setFirestoreCars] = useState([])
   const [myRentals, setMyRentals] = useState([])
   const today = new Date().toISOString().split('T')[0]
-  const plus4  = new Date(Date.now() + 4 * 864e5).toISOString().split('T')[0]
-  const [pickup, setPickup] = useState(today)
-  const [ret,    setRet]    = useState(plus4)
 
   useEffect(() => {
     const q = query(collection(db, 'cars'))
@@ -86,17 +83,21 @@ export default function BrowseScreen({ user, onCarTap, onRentalTap }) {
         <div className="date-row">
           <div className="date-field">
             <div className="date-field-label">📅 Pick-up date</div>
-            <input type="date" value={pickup} min={today} onChange={e => setPickup(e.target.value)}
+            <input type="date" value={pickup} min={today} onChange={e => onPickupChange(e.target.value)}
               style={{ marginTop: 4, padding: 0, background: 'transparent', border: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600, outline: 'none', width: '100%' }} />
           </div>
           <div className="date-field">
             <div className="date-field-label">📅 Return date</div>
-            <input type="date" value={ret} min={pickup || today} onChange={e => setRet(e.target.value)}
+            <input type="date" value={ret} min={pickup || today} onChange={e => onRetChange(e.target.value)}
               style={{ marginTop: 4, padding: 0, background: 'transparent', border: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600, outline: 'none', width: '100%' }} />
           </div>
         </div>
-        <button className="btn btn-primary btn-full" style={{ marginTop: 12, fontSize: '0.9rem' }}>
-          Search
+        <button className="btn btn-primary btn-full" style={{ marginTop: 12, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          🔍 Search
+          {pickup && ret && (() => {
+            const days = Math.max(1, Math.ceil((new Date(ret) - new Date(pickup)) / 864e5))
+            return <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 100, padding: '2px 8px', fontSize: '0.78rem' }}>{days} day{days !== 1 ? 's' : ''}</span>
+          })()}
         </button>
       </div>
 

@@ -4,12 +4,12 @@ import { db } from '../firebase.js'
 
 const fmt = n => Number(n).toLocaleString()
 
-export default function BookingScreen({ car, user, onBack, onDone }) {
+export default function BookingScreen({ car, user, initialPickup, initialRet, onBack, onDone }) {
   const todayStr = new Date().toISOString().split('T')[0]
   const plus3Str = new Date(Date.now() + 3 * 864e5).toISOString().split('T')[0]
 
-  const [pickup,    setPickup]    = useState(todayStr)
-  const [ret,       setRet]       = useState(plus3Str)
+  const [pickup,    setPickup]    = useState(initialPickup || todayStr)
+  const [ret,       setRet]       = useState(initialRet    || plus3Str)
   const [loading,   setLoading]   = useState(false)
   const [checkout,  setCheckout]  = useState(null)  // holds confirmed booking object
 
