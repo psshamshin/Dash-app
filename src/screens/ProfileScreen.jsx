@@ -1,4 +1,6 @@
-export default function ProfileScreen({ user, theme, onToggleTheme, onLogout, onLogin }) {
+const ADMIN_EMAIL = 'psshamshin@gmail.com'
+
+export default function ProfileScreen({ user, theme, onToggleTheme, onLogout, onLogin, onAdmin }) {
   if (!user) {
     return (
       <div className="screen fade-up" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px' }}>
@@ -84,7 +86,20 @@ export default function ProfileScreen({ user, theme, onToggleTheme, onLogout, on
         ))}
       </div>
 
-      <div style={{ padding: '16px 16px 28px' }}>
+      {user.email === ADMIN_EMAIL && (
+        <div style={{ padding: '0 16px 10px' }}>
+          <button
+            onClick={onAdmin}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 12, cursor: 'pointer', textAlign: 'left' }}
+          >
+            <span style={{ fontSize: '1rem' }}>🛠️</span>
+            <span style={{ flex: 1, fontSize: '0.88rem', fontWeight: 600, color: 'var(--accent)' }}>Admin Panel</span>
+            <span className="badge badge-accent" style={{ fontSize: '0.6rem' }}>dev</span>
+          </button>
+        </div>
+      )}
+
+      <div style={{ padding: '0 16px 28px' }}>
         <button className="btn btn-secondary btn-full" style={{ color: 'var(--red)', fontSize: '0.88rem' }} onClick={onLogout}>
           Sign out
         </button>
