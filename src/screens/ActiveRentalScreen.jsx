@@ -14,9 +14,48 @@ export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
   const [reportText,   setReportText]   = useState('')
   const [reportSent,   setReportSent]   = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
-  const [showComplete, setShowComplete] = useState(false)
-  const [completing,   setCompleting]   = useState(false)
-  const [completed,    setCompleted]    = useState(false)
+  const [showComplete,  setShowComplete]  = useState(false)
+  const [completing,    setCompleting]    = useState(false)
+  const [completed,     setCompleted]     = useState(false)
+  const [showCancel,    setShowCancel]    = useState(false)
+  const [cancelling,    setCancelling]    = useState(false)
+  const [cancelled,     setCancelled]     = useState(false)
+
+  if (cancelled) {
+    return (
+      <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', gap: 20 }}>
+        <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
+          ❌
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ marginBottom: 8 }}>Rental cancelled</h2>
+          <p style={{ fontSize: '0.9rem', marginBottom: 6 }}>
+            Your booking for <strong style={{ color: 'var(--text)' }}>{rental.carBrand} {rental.carModel}</strong> has been cancelled.
+          </p>
+          <p style={{ fontSize: '0.85rem' }}>
+            No payment was charged. The car is now available for others.
+          </p>
+          {rental.deposit > 0 && (
+            <p style={{ fontSize: '0.82rem', marginTop: 6, color: 'var(--text-low)' }}>
+              Deposit ฿{fmt(rental.deposit)} will be refunded shortly.
+            </p>
+          )}
+        </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 20px', width: '100%', maxWidth: 340, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ width: 46, height: 40, borderRadius: 10, background: rental.carColorBg, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>
+            {rental.carPhoto ? <img src={rental.carPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} /> : rental.carEmoji}
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.9rem' }}>{rental.carBrand} {rental.carModel}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-low)' }}>Was: {rental.pickup} → {rental.ret}</div>
+          </div>
+        </div>
+        <button className="btn btn-primary btn-full" style={{ maxWidth: 340 }} onClick={onBack}>
+          Back to home
+        </button>
+      </div>
+    )
+  }
 
   if (completed) {
     return (
@@ -84,6 +123,30 @@ export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
     }
     setCompleting(false)
     setShowComplete(false)
+  }
+
+  async function cancelRental() {
+    setCancelling(true)
+    try {
+      if (rental.id && !rental.id.startsWith('local_')) {
+        await updateDoc(doc(db, 'bookings', rental.id), {
+          status: 'cancelled',
+          cancelledAt: serverTimestamp(),
+        })
+      }
+      if (rental.carId && rental.ownerUid) {
+        await updateDoc(doc(db, 'cars', rental.carId), {
+          isAvailable: true,
+          activeBooking: deleteField(),
+        })
+      }
+      setCancelled(true)
+    } catch (e) {
+      console.error('Cancel rental error:', e)
+      setCancelled(true)
+    }
+    setCancelling(false)
+    setShowCancel(false)
   }
 
   async function submitReport() {
@@ -219,17 +282,33 @@ export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
             ⚠️ Report Incident
           </button>
 
-          {/* Complete rental */}
+          {/* Complete / Cancel rental */}
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-            <button
-              onClick={() => setShowComplete(true)}
-              style={{ width: '100%', padding: '14px', borderRadius: 100, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}
-            >
-              ✅ Complete Rental
-            </button>
-            <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-low)', marginTop: 8, lineHeight: 1.5 }}>
-              Confirm return of the car. Payment will be released to the owner.
-            </p>
+            {isUpcoming ? (
+              <>
+                <button
+                  onClick={() => setShowCancel(true)}
+                  style={{ width: '100%', padding: '14px', borderRadius: 100, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  ✕ Cancel Rental
+                </button>
+                <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-low)', marginTop: 8, lineHeight: 1.5 }}>
+                  No payment charged. The car will be released back to availability.
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowComplete(true)}
+                  style={{ width: '100%', padding: '14px', borderRadius: 100, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  ✅ Complete Rental
+                </button>
+                <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-low)', marginTop: 8, lineHeight: 1.5 }}>
+                  Confirm return of the car. Payment will be released to the owner.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -262,6 +341,40 @@ export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
                 style={{ flex: 1, padding: '13px', borderRadius: 100, border: 'none', background: completing ? 'rgba(34,197,94,0.5)' : '#22c55e', color: '#fff', fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 700, cursor: completing ? 'default' : 'pointer' }}
               >
                 {completing ? 'Processing…' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel rental confirmation */}
+      {showCancel && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 2000, display: 'flex', alignItems: 'flex-end' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowCancel(false) }}>
+          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>⚠️</div>
+              <h3 style={{ marginBottom: 6 }}>Cancel booking?</h3>
+              <p style={{ fontSize: '0.85rem' }}>
+                Your booking for <strong style={{ color: 'var(--text)' }}>{rental.carBrand} {rental.carModel}</strong> will be cancelled.
+              </p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-low)', marginTop: 6 }}>
+                No payment will be charged. The owner will be notified.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowCancel(false)}
+                style={{ flex: 1, padding: '13px', borderRadius: 100, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Keep it
+              </button>
+              <button
+                onClick={cancelRental}
+                disabled={cancelling}
+                style={{ flex: 1, padding: '13px', borderRadius: 100, border: 'none', background: cancelling ? 'rgba(239,68,68,0.4)' : '#ef4444', color: '#fff', fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 700, cursor: cancelling ? 'default' : 'pointer' }}
+              >
+                {cancelling ? 'Cancelling…' : 'Yes, cancel'}
               </button>
             </div>
           </div>
