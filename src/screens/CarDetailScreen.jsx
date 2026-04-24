@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function CarDetailScreen({ car, user, onBack, onChat }) {
+export default function CarDetailScreen({ car, user, onBack, onChat, onContactRenter }) {
   const [liked, setLiked] = useState(false)
 
   const isOwnCar = user?.uid && car.ownerUid === user.uid
@@ -92,6 +92,40 @@ export default function CarDetailScreen({ car, user, onBack, onChat }) {
             </div>
             <span className="badge badge-green" style={{ marginLeft: 'auto' }}>Verified</span>
           </div>
+
+          {/* Owner: active rental info */}
+          {isOwnCar && car.activeBooking && (
+            <div style={{ marginBottom: 16, background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 14, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px 8px', display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(34,197,94,0.15)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#22c55e', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Active Rental</span>
+              </div>
+              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)', flexShrink: 0 }}>
+                    {car.activeBooking.renterInit}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text)' }}>{car.activeBooking.renterName}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-low)' }}>Renter</div>
+                  </div>
+                  <span className="badge badge-accent" style={{ marginLeft: 'auto' }}>฿{Number(car.activeBooking.total).toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 10 }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>{car.activeBooking.pickup}</span>
+                  <span style={{ flex: 1, textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-low)' }}>→ {car.activeBooking.days}d →</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>{car.activeBooking.ret}</span>
+                </div>
+                <button
+                  onClick={() => onContactRenter?.(car)}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.85rem', padding: '10px', width: '100%' }}
+                >
+                  💬 Contact Renter
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Specs */}
           <div style={{ marginBottom: 16 }}>

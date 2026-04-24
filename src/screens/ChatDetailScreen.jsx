@@ -159,7 +159,7 @@ function MessageRow({ msg, isRenter, otherInit, otherColor, colorBg, onAccept, o
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function ChatDetailScreen({ chat, user, onBack }) {
+export default function ChatDetailScreen({ chat, user, onBack, onDealAccepted }) {
   const isReal   = !!chat.isReal
   const iAmOwner = isReal && chat.ownerUid === user?.uid
   const isRenter = !iAmOwner
@@ -288,7 +288,10 @@ export default function ChatDetailScreen({ chat, user, onBack }) {
           <MessageRow
             key={msg.id} msg={msg} isRenter={isRenter}
             otherInit={otherInit} otherColor={otherColor} colorBg={colorBg}
-            onAccept={() => updateOfferStatus(msg.id, 'accepted')}
+            onAccept={() => {
+              updateOfferStatus(msg.id, 'accepted')
+              if (isRenter && onDealAccepted) onDealAccepted(msg)
+            }}
             onDecline={() => updateOfferStatus(msg.id, 'declined')}
             onNegotiate={() => updateOfferStatus(msg.id, 'negotiating')}
           />

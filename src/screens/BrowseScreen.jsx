@@ -22,7 +22,9 @@ export default function BrowseScreen({ user, onCarTap }) {
         return tb - ta
       })
       setFirestoreCars(all)
-    }, err => console.error('Cars load error:', err))
+    }, _err => {
+      // Permission error for guests — seed cars still show via allCars
+    })
   }, [])
 
   const allCars = [...firestoreCars, ...seedCars]

@@ -13,9 +13,10 @@ export default function BookingScreen({ car, user, onBack, onDone }) {
   const [loading,   setLoading]   = useState(false)
   const [checkout,  setCheckout]  = useState(null)  // holds confirmed booking object
 
-  const days      = Math.max(1, Math.ceil((new Date(ret) - new Date(pickup)) / 864e5))
-  const rental    = car.price * days
-  const insurance = 200 * days
+  const pricePerDay = car._overridePrice || car.price
+  const days        = Math.max(1, Math.ceil((new Date(ret) - new Date(pickup)) / 864e5))
+  const rental      = pricePerDay * days
+  const insurance   = 200 * days
   const deposit   = 2000
   const total     = rental + insurance + deposit
 
@@ -156,7 +157,10 @@ export default function BookingScreen({ car, user, onBack, onDone }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text)', marginBottom: 2 }}>{car.brand} {car.model}</div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-low)', marginBottom: 4 }}>{car.year} · {car.location}</div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent)' }}>฿{fmt(car.price)} / day</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent)' }}>฿{fmt(pricePerDay)} / day</div>
+              {car._overridePrice && <span className="badge badge-green" style={{ fontSize: '0.6rem' }}>✓ Negotiated</span>}
+            </div>
           </div>
         </div>
 
@@ -181,7 +185,7 @@ export default function BookingScreen({ car, user, onBack, onDone }) {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px 0', fontSize: '0.74rem', color: 'var(--text-low)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Price breakdown</div>
           {[
-            { label: `Rental (฿${fmt(car.price)} × ${days}d)`, val: rental },
+            { label: `Rental (฿${fmt(pricePerDay)} × ${days}d)`, val: rental },
             { label: `Insurance (฿200 × ${days}d)`,             val: insurance },
             { label: 'Refundable deposit',                       val: deposit },
           ].map(row => (

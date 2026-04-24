@@ -102,7 +102,13 @@ export default function App() {
               id: car.id, brand: car.brand, model: car.model,
               photo: car.photo || null, emoji: car.emoji || '🚗',
               colorBg: car.colorBg || 'rgba(249,115,22,0.15)',
+              color: car.color || '#f97316',
               price: car.price,
+              location: car.location || '',
+              year: car.year || '',
+              seats: car.seats || 5,
+              fuel: car.fuel || 'Petrol',
+              transmission: car.transmission || 'Automatic',
             },
             renterUid: user.uid,
             renterName: user.name,
@@ -145,6 +151,18 @@ export default function App() {
     if (!requireAuth()) return
     setSelectedChat(chat)
     setScreen('chat')
+  }
+
+  function handleDealAccepted(offer, chat) {
+    // Renter accepted a negotiated price — go to BookingScreen with that price pre-filled
+    const carForBooking = {
+      ...chat.car,
+      owner:    chat.ownerName,
+      ownerInit: chat.ownerInit,
+      ownerUid: chat.ownerUid,
+    }
+    setSelectedCar({ ...carForBooking, _overridePrice: offer.total })
+    setScreen('booking')
   }
 
   function handleBack() {
@@ -209,6 +227,22 @@ export default function App() {
         user={user}
         onBack={() => setScreen('main')}
         onChat={handleCarBook}
+        onContactRenter={(car) => {
+          const renter = car.activeBooking
+          if (!renter) return
+          handleChatOpen({
+            id: `${renter.renterUid}_${car.id}`,
+            isReal: true,
+            car: { id: car.id, brand: car.brand, model: car.model, photo: car.photo, emoji: car.emoji, colorBg: car.colorBg, price: car.price },
+            ownerUid: user.uid,
+            ownerName: user.name,
+            ownerInit: user.avatar,
+            renterUid: renter.renterUid,
+            renterName: renter.renterName,
+            renterInit: renter.renterInit,
+            currentPrice: renter.total,
+          })
+        }}
       />
     )
   } else if (screen === 'chat' && selectedChat) {
@@ -218,6 +252,7 @@ export default function App() {
         user={user}
         role={role}
         onBack={handleBack}
+        onDealAccepted={(offer) => handleDealAccepted(offer, selectedChat)}
       />
     )
   } else {
