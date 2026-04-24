@@ -3,14 +3,12 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 export default function ListingsScreen({ user, onCarTap, onAddCar }) {
-  const [listings, setListings] = useState([])
+  const [listings,          setListings]          = useState([])
+  const [completedBookings, setCompletedBookings] = useState([])
 
   useEffect(() => {
     if (!user?.uid) return
-    const q = query(
-      collection(db, 'cars'),
-      where('ownerUid', '==', user.uid)
-    )
+    const q = query(collection(db, 'cars'), where('ownerUid', '==', user.uid))
     return onSnapshot(q, snap => {
       const all = snap.docs.map(d => d.data())
       all.sort((a, b) => {
@@ -22,8 +20,20 @@ export default function ListingsScreen({ user, onCarTap, onAddCar }) {
     }, err => console.error('Listings load error:', err))
   }, [user?.uid])
 
-  const totalEarnings = listings.reduce((sum, c) => sum + c.price * c.trips, 0)
-  const totalTrips    = listings.reduce((sum, c) => sum + c.trips, 0)
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(
+      collection(db, 'bookings'),
+      where('ownerUid', '==', user.uid),
+      where('status', '==', 'completed')
+    )
+    return onSnapshot(q, snap => {
+      setCompletedBookings(snap.docs.map(d => d.data()))
+    }, () => {})
+  }, [user?.uid])
+
+  const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.rental || 0), 0)
+  const totalTrips    = completedBookings.length
   const avgRating     = listings.length
     ? (listings.reduce((sum, c) => sum + c.rating, 0) / listings.length).toFixed(1)
     : '—'

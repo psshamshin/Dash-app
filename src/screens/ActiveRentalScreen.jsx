@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { collection, addDoc, doc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, doc, updateDoc, deleteField, increment, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 const fmt = n => Number(n).toLocaleString()
@@ -69,6 +69,12 @@ export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
         await updateDoc(doc(db, 'cars', rental.carId), {
           isAvailable: true,
           activeBooking: deleteField(),
+          trips: increment(1),
+        })
+        // Credit rental earnings to owner's account
+        await updateDoc(doc(db, 'users', rental.ownerUid), {
+          totalEarnings: increment(rental.rental || 0),
+          completedTrips: increment(1),
         })
       }
       setCompleted(true)
