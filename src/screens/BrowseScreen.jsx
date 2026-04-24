@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { cars as seedCars, categories } from '../data/cars.js'
+import { APP_VERSION } from '../version.js'
 
 export default function BrowseScreen({ user, onCarTap }) {
   const [cat, setCat]         = useState('All')
@@ -45,7 +46,7 @@ export default function BrowseScreen({ user, onCarTap }) {
     <div className="screen fade-up">
       <div className="app-bar">
         <span className="logo">Dash<span>.</span></span>
-        <span style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-dim)', border: '1px solid var(--accent-mid)', borderRadius: 100, padding: '2px 7px', letterSpacing: '0.04em', marginLeft: 2 }}>beta v0.3</span>
+        <span style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-dim)', border: '1px solid var(--accent-mid)', borderRadius: 100, padding: '2px 7px', letterSpacing: '0.04em', marginLeft: 2 }}>{APP_VERSION}</span>
         <div style={{ flex: 1 }} />
         <button className="icon-btn">🔔</button>
       </div>
