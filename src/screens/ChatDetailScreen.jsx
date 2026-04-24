@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   collection, addDoc, query, orderBy, onSnapshot,
-  doc, updateDoc, serverTimestamp,
+  doc, setDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
@@ -206,9 +206,9 @@ export default function ChatDetailScreen({ chat, user, onBack, onDealAccepted })
         type: 'text', text: text.trim(),
         senderUid: user.uid, time: serverTimestamp(),
       })
-      await updateDoc(doc(db, 'chats', chat.id), {
+      await setDoc(doc(db, 'chats', chat.id), {
         lastMessage: text.trim(), lastMessageTime: serverTimestamp(),
-      })
+      }, { merge: true })
     } catch (e) { console.error('Send error:', e) }
   }
 
@@ -221,18 +221,18 @@ export default function ChatDetailScreen({ chat, user, onBack, onDealAccepted })
         breakdown: { rental, insurance, deposit },
         total, status: 'pending', time: serverTimestamp(),
       })
-      await updateDoc(doc(db, 'chats', chat.id), {
+      await setDoc(doc(db, 'chats', chat.id), {
         lastMessage: `Price offer: ฿${total.toLocaleString()}/day`,
         lastMessageTime: serverTimestamp(),
         currentPrice: total,
-      })
+      }, { merge: true })
     } catch (e) { console.error('Offer error:', e) }
   }
 
   async function updateOfferStatus(msgId, status) {
     if (!isReal) return
     try {
-      await updateDoc(doc(db, 'chats', chat.id, 'messages', msgId), { status })
+      await setDoc(doc(db, 'chats', chat.id, 'messages', msgId), { status }, { merge: true })
     } catch (e) { console.error('Status error:', e) }
   }
 
