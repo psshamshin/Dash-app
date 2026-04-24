@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, doc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 const fmt = n => Number(n).toLocaleString()
@@ -10,14 +10,75 @@ function daysLeft(ret) {
 }
 
 export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
-  const [showReport,  setShowReport]  = useState(false)
-  const [reportText,  setReportText]  = useState('')
-  const [reportSent,  setReportSent]  = useState(false)
+  const [showReport,   setShowReport]   = useState(false)
+  const [reportText,   setReportText]   = useState('')
+  const [reportSent,   setReportSent]   = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
+  const [showComplete, setShowComplete] = useState(false)
+  const [completing,   setCompleting]   = useState(false)
+  const [completed,    setCompleted]    = useState(false)
+
+  if (completed) {
+    return (
+      <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', gap: 20 }}>
+        <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
+          🎉
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ marginBottom: 8 }}>Rental completed!</h2>
+          <p style={{ fontSize: '0.9rem', marginBottom: 6 }}>
+            Thank you for using <strong style={{ color: 'var(--accent)' }}>Dash.</strong>
+          </p>
+          <p style={{ fontSize: '0.85rem' }}>
+            <strong style={{ color: 'var(--text)' }}>฿{fmt(rental.rental)}</strong> has been credited to {rental.ownerName}.
+          </p>
+          <p style={{ fontSize: '0.82rem', marginTop: 6, color: 'var(--text-low)' }}>
+            Deposit ฿{fmt(rental.deposit)} will be refunded shortly.
+          </p>
+        </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 20px', width: '100%', maxWidth: 340, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ width: 46, height: 40, borderRadius: 10, background: rental.carColorBg, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>
+            {rental.carPhoto ? <img src={rental.carPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} /> : rental.carEmoji}
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.9rem' }}>{rental.carBrand} {rental.carModel}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-low)' }}>{rental.pickup} → {rental.ret}</div>
+          </div>
+        </div>
+        <button className="btn btn-primary btn-full" style={{ maxWidth: 340 }} onClick={onBack}>
+          Back to home
+        </button>
+      </div>
+    )
+  }
 
   const left = daysLeft(rental.ret)
   const isActive   = left >= 0
   const isUpcoming = new Date(rental.pickup) > new Date()
+
+  async function completeRental() {
+    setCompleting(true)
+    try {
+      if (rental.id && !rental.id.startsWith('local_')) {
+        await updateDoc(doc(db, 'bookings', rental.id), {
+          status: 'completed',
+          completedAt: serverTimestamp(),
+        })
+      }
+      if (rental.carId && rental.ownerUid) {
+        await updateDoc(doc(db, 'cars', rental.carId), {
+          isAvailable: true,
+          activeBooking: deleteField(),
+        })
+      }
+      setCompleted(true)
+    } catch (e) {
+      console.error('Complete rental error:', e)
+      setCompleted(true)
+    }
+    setCompleting(false)
+    setShowComplete(false)
+  }
 
   async function submitReport() {
     if (!reportText.trim()) return
@@ -151,8 +212,55 @@ export default function ActiveRentalScreen({ rental, onBack, onContactOwner }) {
           >
             ⚠️ Report Incident
           </button>
+
+          {/* Complete rental */}
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+            <button
+              onClick={() => setShowComplete(true)}
+              style={{ width: '100%', padding: '14px', borderRadius: 100, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}
+            >
+              ✅ Complete Rental
+            </button>
+            <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-low)', marginTop: 8, lineHeight: 1.5 }}>
+              Confirm return of the car. Payment will be released to the owner.
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Complete rental confirmation */}
+      {showComplete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 2000, display: 'flex', alignItems: 'flex-end' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowComplete(false) }}>
+          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🔑</div>
+              <h3 style={{ marginBottom: 6 }}>Return the car?</h3>
+              <p style={{ fontSize: '0.85rem' }}>
+                This will mark the rental as complete and release <strong style={{ color: 'var(--text)' }}>฿{fmt(rental.rental)}</strong> to {rental.ownerName}.
+              </p>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-low)', marginTop: 6 }}>
+                Your deposit of ฿{fmt(rental.deposit)} will be refunded.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowComplete(false)}
+                style={{ flex: 1, padding: '13px', borderRadius: 100, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={completeRental}
+                disabled={completing}
+                style={{ flex: 1, padding: '13px', borderRadius: 100, border: 'none', background: completing ? 'rgba(34,197,94,0.5)' : '#22c55e', color: '#fff', fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 700, cursor: completing ? 'default' : 'pointer' }}
+              >
+                {completing ? 'Processing…' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report incident modal */}
       {showReport && (
