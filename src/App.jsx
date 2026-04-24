@@ -132,10 +132,20 @@ export default function App() {
         })
       } catch (e) {
         console.error('Chat creation error:', e)
+        // Even if Firestore fails, show real chat UI for cars with real owners
         setSelectedChat({
-          id: chatId, isReal: false, bookType,
-          car, otherName: car.owner, otherInit: car.ownerInit,
-          otherColor: car.color, currentPrice: car.price, messages: [],
+          id: chatId,
+          isReal: true,
+          bookType,
+          car: {
+            id: car.id, brand: car.brand, model: car.model,
+            photo: car.photo || null, emoji: car.emoji || '🚗',
+            colorBg: car.colorBg || 'rgba(249,115,22,0.15)',
+            price: car.price,
+          },
+          renterUid: user.uid,  renterName: user.name,  renterInit: user.avatar,
+          ownerUid:  car.ownerUid, ownerName: car.owner, ownerInit: car.ownerInit,
+          currentPrice: car.price,
         })
       }
     } else {
@@ -220,7 +230,24 @@ export default function App() {
       <ActiveRentalScreen
         rental={activeRental}
         onBack={() => setScreen('main')}
-        onContactOwner={() => handleCarBook({ ...activeRental, id: activeRental.carId, ownerUid: activeRental.ownerUid, owner: activeRental.ownerName, ownerInit: activeRental.ownerInit }, 'negotiate')}
+        onContactOwner={() => {
+          if (!activeRental?.ownerUid) return   // seed car — no real owner
+          handleCarBook({
+            id:           activeRental.carId,
+            brand:        activeRental.carBrand,
+            model:        activeRental.carModel,
+            photo:        activeRental.carPhoto  || null,
+            emoji:        activeRental.carEmoji  || '🚗',
+            colorBg:      activeRental.carColorBg || 'rgba(249,115,22,0.15)',
+            color:        activeRental.carColor  || '#f97316',
+            price:        activeRental.total,
+            location:     activeRental.carLocation || '',
+            year:         activeRental.carYear || '',
+            ownerUid:     activeRental.ownerUid,
+            owner:        activeRental.ownerName,
+            ownerInit:    activeRental.ownerInit,
+          }, 'negotiate')
+        }}
       />
     )
   } else if (screen === 'car' && selectedCar) {
