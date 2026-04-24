@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
 import { auth, db } from './firebase.js'
 import AuthScreen        from './screens/AuthScreen.jsx'
 import OnboardingScreen  from './screens/OnboardingScreen.jsx'
@@ -15,6 +15,7 @@ import BookingScreen        from './screens/BookingScreen.jsx'
 import ActiveRentalScreen  from './screens/ActiveRentalScreen.jsx'
 import AdminScreen          from './screens/AdminScreen.jsx'
 import BottomNav            from './components/BottomNav.jsx'
+import Toast                from './components/Toast.jsx'
 
 export default function App() {
   const [user, setUser]                 = useState(null)
@@ -28,6 +29,10 @@ export default function App() {
   const [searchPickup, setSearchPickup] = useState(today)
   const [searchRet,    setSearchRet]    = useState(plus4)
   const [theme, setTheme]                   = useState(() => localStorage.getItem('dash_theme') || 'dark')
+  const [toast, setToast]                   = useState(null)
+  const chatTimestamps                       = useRef({})
+  const screenRef                            = useRef(screen)
+  const selectedChatRef                      = useRef(null)
 
   // Role is derived from current tab
   const role = tab === 'listings' ? 'owner' : 'renter'
@@ -37,6 +42,73 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('dash_theme', theme)
   }, [theme])
+
+  // Keep refs in sync for use inside Firestore listeners
+  useEffect(() => { screenRef.current = screen }, [screen])
+  useEffect(() => { selectedChatRef.current = selectedChat }, [selectedChat])
+
+  function showToast(icon, title, body, opts = {}) {
+    setToast({ icon, title, body, iconBg: opts.iconBg, onTap: opts.onTap })
+  }
+
+  // Global listener: new messages in user's chats
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(collection(db, 'chats'), where('participants', 'array-contains', user.uid))
+    return onSnapshot(q, snap => {
+      snap.docChanges().forEach(change => {
+        const data = change.doc.data()
+        const chatId = change.doc.id
+        const newMs = data.lastMessageTime?.toMillis?.()
+
+        if (change.type === 'added') {
+          chatTimestamps.current[chatId] = newMs
+          return
+        }
+        if (change.type !== 'modified') return
+
+        const oldMs = chatTimestamps.current[chatId]
+        chatTimestamps.current[chatId] = newMs
+
+        // Only notify if it's a new message and user is not already in this chat
+        if (!newMs || !oldMs || newMs <= oldMs) return
+        if (screenRef.current === 'chat' && selectedChatRef.current?.id === chatId) return
+        if (!data.lastMessage) return
+
+        const iAmOwner = data.ownerUid === user.uid
+        const otherName = iAmOwner ? data.renterName : data.ownerName
+        showToast('💬', otherName || 'New message', data.lastMessage, {
+          iconBg: 'rgba(249,115,22,0.15)',
+          onTap: () => {
+            setSelectedChat({ ...data, id: chatId, isReal: true })
+            setScreen('chat')
+          },
+        })
+      })
+    }, () => {})
+  }, [user?.uid])
+
+  // Global listener: booking status changes for owner
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(
+      collection(db, 'bookings'),
+      where('ownerUid', '==', user.uid),
+      where('status', '==', 'confirmed')
+    )
+    let initialized = false
+    return onSnapshot(q, snap => {
+      if (!initialized) { initialized = true; return }
+      snap.docChanges().forEach(change => {
+        if (change.type !== 'added') return
+        const b = change.doc.data()
+        showToast('🚗', 'New booking!', `${b.renterName} booked ${b.carBrand} ${b.carModel}`, {
+          iconBg: 'rgba(34,197,94,0.15)',
+          onTap: () => { setTab('listings'); setScreen('main') },
+        })
+      })
+    }, () => {})
+  }, [user?.uid])
 
   // Firebase auth state
   useEffect(() => {
@@ -226,7 +298,11 @@ export default function App() {
         initialPickup={searchPickup}
         initialRet={searchRet}
         onBack={() => setScreen('car')}
-        onDone={(rental) => { setActiveRental(rental); setScreen('rental') }}
+        onDone={(rental) => {
+          setActiveRental(rental)
+          setScreen('rental')
+          showToast('✅', 'Booking confirmed!', `${rental.carBrand} ${rental.carModel} · ${rental.pickup} → ${rental.ret}`, { iconBg: 'rgba(34,197,94,0.15)' })
+        }}
       />
     )
   } else if (screen === 'admin') {
@@ -307,6 +383,7 @@ export default function App() {
     <div style={{ width: '100%', minHeight: '100dvh', position: 'relative', background: 'var(--bg)' }}>
       {content}
       {!hideNav && <BottomNav tab={tab} onTabChange={handleTabChange} />}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   )
 }
