@@ -193,7 +193,7 @@ export default function App() {
     if (tab === 'chats')    return <ChatsScreen user={user} onChatTap={handleChatOpen} />
     if (tab === 'listings') return <ListingsScreen user={user} onCarTap={handleCarTap} onAddCar={() => setScreen('add-car')} />
     if (tab === 'profile')  return <ProfileScreen user={user} theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} onLogout={handleLogout} onLogin={() => setScreen('auth')} onAdmin={() => setScreen('admin')} />
-    return <BrowseScreen user={user} onCarTap={handleCarTap} />
+    return <BrowseScreen user={user} onCarTap={handleCarTap} onRentalTap={r => { setActiveRental(r); setScreen('rental') }} />
   }
 
   // ── Screen routing ──────────────────────────────────────────────────────────

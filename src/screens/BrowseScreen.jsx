@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
-import { collection, query, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { cars as seedCars, categories } from '../data/cars.js'
 import { APP_VERSION } from '../version.js'
 
-export default function BrowseScreen({ user, onCarTap }) {
+export default function BrowseScreen({ user, onCarTap, onRentalTap }) {
   const [cat, setCat]         = useState('All')
   const [search, setSearch]   = useState('')
   const [firestoreCars, setFirestoreCars] = useState([])
+  const [myRentals, setMyRentals] = useState([])
   const today = new Date().toISOString().split('T')[0]
   const plus4  = new Date(Date.now() + 4 * 864e5).toISOString().split('T')[0]
   const [pickup, setPickup] = useState(today)
@@ -23,10 +24,26 @@ export default function BrowseScreen({ user, onCarTap }) {
         return tb - ta
       })
       setFirestoreCars(all)
-    }, _err => {
-      // Permission error for guests — seed cars still show via allCars
-    })
+    }, _err => {})
   }, [])
+
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(
+      collection(db, 'bookings'),
+      where('renterUid', '==', user.uid),
+      where('status', '==', 'confirmed')
+    )
+    return onSnapshot(q, snap => {
+      const all = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+      all.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.() || new Date(0)
+        const tb = b.createdAt?.toDate?.() || new Date(0)
+        return tb - ta
+      })
+      setMyRentals(all)
+    }, _err => {})
+  }, [user?.uid])
 
   const allCars = [...firestoreCars, ...seedCars]
 
@@ -50,6 +67,12 @@ export default function BrowseScreen({ user, onCarTap }) {
         <div style={{ flex: 1 }} />
         <button className="icon-btn">🔔</button>
       </div>
+
+      {myRentals.length > 0 && (
+        <div style={{ padding: '0 16px 4px' }}>
+          {myRentals.map(rental => <RentalCard key={rental.id} rental={rental} onTap={() => onRentalTap(rental)} />)}
+        </div>
+      )}
 
       <div className="search-form">
         <div className="input-wrap" style={{ marginBottom: 10 }}>
@@ -128,6 +151,63 @@ export default function BrowseScreen({ user, onCarTap }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function RentalCard({ rental, onTap }) {
+  const now      = Date.now()
+  const pickupMs = new Date(rental.pickup).getTime()
+  const retMs    = new Date(rental.ret).getTime()
+  const isActive   = now >= pickupMs && now <= retMs
+  const isUpcoming = now < pickupMs
+  const daysLeft   = Math.ceil((retMs - now) / 864e5)
+  const daysUntil  = Math.ceil((pickupMs - now) / 864e5)
+  const fmt = n => Number(n).toLocaleString()
+
+  return (
+    <div
+      onClick={onTap}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        background: 'var(--surface)',
+        border: `1px solid ${isActive ? 'rgba(34,197,94,0.35)' : 'var(--accent-mid)'}`,
+        borderRadius: 16, padding: '12px 14px', cursor: 'pointer',
+        marginBottom: 8,
+        boxShadow: isActive ? '0 0 0 1px rgba(34,197,94,0.15)' : '0 0 0 1px rgba(249,115,22,0.08)',
+      }}
+    >
+      {/* Car thumb */}
+      <div style={{ width: 54, height: 46, borderRadius: 10, background: rental.carColorBg || 'rgba(249,115,22,0.15)', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', flexShrink: 0 }}>
+        {rental.carPhoto
+          ? <img src={rental.carPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+          : rental.carEmoji || '🚗'
+        }
+      </div>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {rental.carBrand} {rental.carModel}
+          </span>
+          <span className={`badge ${isActive ? 'badge-green' : 'badge-accent'}`} style={{ fontSize: '0.6rem', flexShrink: 0 }}>
+            {isActive ? '● Active' : 'Upcoming'}
+          </span>
+        </div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-low)', marginBottom: 3 }}>
+          📅 {rental.pickup} → {rental.ret} · {rental.days} day{rental.days !== 1 ? 's' : ''}
+        </div>
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: isActive ? 'var(--green)' : 'var(--accent)' }}>
+          {isActive
+            ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
+            : `Starts in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}`
+          }
+          {' · '}฿{fmt(rental.total)}
+        </div>
+      </div>
+
+      <span style={{ fontSize: '1rem', color: 'var(--text-low)', flexShrink: 0 }}>›</span>
     </div>
   )
 }
