@@ -76,7 +76,7 @@ export default function BookingScreen({ car, user, initialPickup, initialRet, on
   // ── Checkout receipt ───────────────────────────────────────────────────────
   if (checkout) {
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 16px 12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
           <span style={{ flex: 1, fontSize: '1rem', fontWeight: 700, color: 'var(--text)' }}>Booking Receipt</span>
         </div>
@@ -153,7 +153,7 @@ export default function BookingScreen({ car, user, initialPickup, initialRet, on
 
   // ── Booking form ───────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 16px 12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: 'var(--surface-2)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1rem', flexShrink: 0 }}>←</button>
         <span style={{ flex: 1, fontSize: '1rem', fontWeight: 700, color: 'var(--text)' }}>Confirm Booking</span>
