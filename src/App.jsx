@@ -139,6 +139,10 @@ export default function App() {
     setScreen('main')
   }
 
+  function handleUserUpdate(fields) {
+    setUser(u => ({ ...u, ...fields }))
+  }
+
   async function handleLogout() {
     await signOut(auth)
     setUser(null)
@@ -280,7 +284,7 @@ export default function App() {
   function renderTab() {
     if (tab === 'chats')    return <ChatsScreen user={user} onChatTap={handleChatOpen} />
     if (tab === 'listings') return <ListingsScreen user={user} onCarTap={handleCarTap} onAddCar={() => setScreen('add-car')} />
-    if (tab === 'profile')  return <ProfileScreen user={user} theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} onLogout={handleLogout} onLogin={() => setScreen('auth')} onAdmin={() => setScreen('admin')} />
+    if (tab === 'profile')  return <ProfileScreen user={user} theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} onLogout={handleLogout} onLogin={() => setScreen('auth')} onAdmin={() => setScreen('admin')} onUserUpdate={handleUserUpdate} />
     return <BrowseScreen user={user} onCarTap={handleCarTap} onRentalTap={r => { setActiveRental(r); setScreen('rental') }} pickup={searchPickup} ret={searchRet} onPickupChange={setSearchPickup} onRetChange={setSearchRet} />
   }
 
