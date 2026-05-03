@@ -30,6 +30,18 @@ export default function ProfileScreen({ user, theme, onToggleTheme, onLogout, on
   const initials    = user.avatar || displayName.slice(0, 2).toUpperCase()
   const verified    = user.verified
 
+  const docs              = user.documents || {}
+  const hasNationalId     = 'nationalId'     in docs ? docs.nationalId     : !!verified
+  const hasDrivingLicense = 'drivingLicense' in docs ? docs.drivingLicense : !!verified
+  const OPTIONAL_DOCS = [
+    { key: 'drivingHistory',    label: 'Driving History' },
+    { key: 'pastBookings',      label: 'Past Bookings' },
+    { key: 'houseRegistration', label: 'House Registration' },
+    { key: 'incomeStatement',   label: 'Income Statement' },
+  ]
+  const optionalUploaded = OPTIONAL_DOCS.filter(d => docs[d.key]).length
+  const discountPct      = optionalUploaded * 5
+
   const settings = [
     { icon: '👤', label: 'Personal info' },
     { icon: '🪪', label: 'Identity verification' },
@@ -74,6 +86,45 @@ export default function ProfileScreen({ user, theme, onToggleTheme, onLogout, on
             <div className="stat-lbl">{s.lbl}</div>
           </div>
         ))}
+      </div>
+
+      {/* ── Deposit discount card ── */}
+      <div style={{ margin: '0 16px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)' }}>💰 Deposit Discount</span>
+          <span style={{
+            fontSize: '0.78rem', fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+            background: discountPct > 0 ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+            color: discountPct > 0 ? 'var(--green)' : 'var(--text-low)',
+          }}>
+            {discountPct > 0 ? `−${discountPct}% on deposit` : 'No discount yet'}
+          </span>
+        </div>
+
+        {[
+          { done: hasNationalId,     label: 'National ID',       required: true },
+          { done: hasDrivingLicense, label: 'Driving License',   required: true },
+          ...OPTIONAL_DOCS.map(d => ({ done: !!docs[d.key], label: d.label, required: false })),
+        ].map(({ done, label, required }, i, arr) => (
+          <div key={label} style={{
+            display: 'flex', alignItems: 'center', gap: 10, paddingTop: 8, paddingBottom: 8,
+            borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+          }}>
+            <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{done ? '✅' : '○'}</span>
+            <span style={{ flex: 1, fontSize: '0.83rem', color: done ? 'var(--text)' : 'var(--text-low)' }}>{label}</span>
+            {required
+              ? <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-low)', letterSpacing: '0.03em' }}>REQUIRED</span>
+              : <span style={{ fontSize: '0.75rem', fontWeight: 700, color: done ? 'var(--green)' : 'var(--accent)' }}>+5%</span>
+            }
+          </div>
+        ))}
+
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(249,115,22,0.06)', borderRadius: 10 }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-low)', lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Deposit tiers: </span>
+            🟢 Low &lt;3,000฿ · 🟡 Standard 3–6K฿ · 🔴 High &gt;6K฿
+          </div>
+        </div>
       </div>
 
       <div className="menu-group">

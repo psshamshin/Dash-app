@@ -22,9 +22,13 @@ export default function OnboardingScreen({ user, onComplete }) {
     setStep('verifying')
     setTimeout(async () => {
       setStep('done')
-      const updated = { ...user, verified: true }
+      const docField = docType === 'license' ? 'drivingLicense' : 'nationalId'
+      const updated = { ...user, verified: true, documents: { ...(user.documents || {}), [docField]: true } }
       try {
-        if (user?.uid) await updateDoc(doc(db, 'users', user.uid), { verified: true })
+        if (user?.uid) await updateDoc(doc(db, 'users', user.uid), {
+          verified: true,
+          [`documents.${docField}`]: true,
+        })
       } catch (e) { console.error(e) }
       setTimeout(() => onComplete(updated), 1200)
     }, 2200)
