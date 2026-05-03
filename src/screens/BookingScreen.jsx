@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
+import { calcFinalDeposit, depositTierLabel, depositTierColor } from '../utils/deposit.js'
 
 const fmt = n => Number(n).toLocaleString()
 
@@ -17,8 +18,10 @@ export default function BookingScreen({ car, user, initialPickup, initialRet, on
   const days        = Math.max(1, Math.ceil((new Date(ret) - new Date(pickup)) / 864e5))
   const rental      = pricePerDay * days
   const insurance   = 200 * days
-  const deposit   = 2000
-  const total     = rental + insurance + deposit
+  const deposit     = calcFinalDeposit(car.price, user?.documents)
+  const depositTier = depositTierLabel(deposit)
+  const depositColor = depositTierColor(deposit)
+  const total       = rental + insurance + deposit
 
   async function handleConfirm() {
     setLoading(true)
@@ -118,12 +121,19 @@ export default function BookingScreen({ car, user, initialPickup, initialRet, on
           {/* Price */}
           <div style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
             {[
-              { label: `Rental (${checkout.days}d)`, val: checkout.rental },
-              { label: 'Insurance',                  val: checkout.insurance },
-              { label: 'Deposit (refundable)',        val: checkout.deposit },
+              { label: `Rental (${checkout.days}d)`,  val: checkout.rental,    tier: null },
+              { label: 'Insurance',                    val: checkout.insurance, tier: null },
+              { label: 'Deposit (refundable)',          val: checkout.deposit,   tier: depositTierLabel(checkout.deposit) },
             ].map(r => (
-              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-low)' }}>{r.label}</span>
+              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-low)' }}>{r.label}</span>
+                  {r.tier && (
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: depositTierColor(r.val), background: `${depositTierColor(r.val)}1a`, padding: '1px 7px', borderRadius: 100 }}>
+                      {r.tier}
+                    </span>
+                  )}
+                </div>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>฿{fmt(r.val)}</span>
               </div>
             ))}
@@ -185,12 +195,19 @@ export default function BookingScreen({ car, user, initialPickup, initialRet, on
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px 0', fontSize: '0.74rem', color: 'var(--text-low)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Price breakdown</div>
           {[
-            { label: `Rental (฿${fmt(pricePerDay)} × ${days}d)`, val: rental },
-            { label: `Insurance (฿200 × ${days}d)`,             val: insurance },
-            { label: 'Refundable deposit',                       val: deposit },
+            { label: `Rental (฿${fmt(pricePerDay)} × ${days}d)`, val: rental,    extra: null },
+            { label: `Insurance (฿200 × ${days}d)`,              val: insurance, extra: null },
+            { label: 'Refundable deposit',                        val: deposit,   extra: depositTier },
           ].map(row => (
-            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-low)' }}>{row.label}</span>
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderTop: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-low)' }}>{row.label}</span>
+                {row.extra && (
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: depositColor, background: `${depositColor}1a`, padding: '1px 7px', borderRadius: 100 }}>
+                    {row.extra}
+                  </span>
+                )}
+              </div>
               <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>฿{fmt(row.val)}</span>
             </div>
           ))}

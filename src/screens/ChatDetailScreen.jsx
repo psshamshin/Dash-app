@@ -4,6 +4,7 @@ import {
   doc, setDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
+import { calcFinalDeposit, calcDepositDiscount, depositTierLabel, depositTierColor } from '../utils/deposit.js'
 
 const fmtTime = (d) => {
   const dt = d?.toDate ? d.toDate() : (d instanceof Date ? d : new Date(d))
@@ -80,15 +81,21 @@ function PriceCard({ msg, isRenter, onAccept, onDecline, onNegotiate }) {
 }
 
 // ─── Owner price input panel ──────────────────────────────────────────────────
-function OwnerPricePanel({ onSend, onCancel }) {
-  const [rental,    setRental]    = useState(1500)
+function OwnerPricePanel({ onSend, onCancel, initialRental = 1500, initialDeposit = 3000, renterDiscountPct = 0 }) {
+  const [rental,    setRental]    = useState(initialRental)
   const [insurance, setInsurance] = useState(200)
-  const [deposit,   setDeposit]   = useState(100)
+  const [deposit,   setDeposit]   = useState(initialDeposit)
   const total = rental + insurance + deposit
 
-  const PRow = ({ label, value, onChange }) => (
+  const tier      = depositTierLabel(deposit)
+  const tierColor = depositTierColor(deposit)
+
+  const PRow = ({ label, value, onChange, extra }) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', minWidth: 90 }}>{label}</span>
+      <div style={{ minWidth: 90 }}>
+        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{label}</span>
+        {extra}
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden' }}>
         <button onClick={() => onChange(Math.max(0, value - 100))} style={{ width: 34, height: 34, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>−</button>
         <span style={{ minWidth: 72, textAlign: 'center', fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>฿{fmt(value)}</span>
@@ -103,9 +110,21 @@ function OwnerPricePanel({ onSend, onCancel }) {
         <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(249,115,22,0.9)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Set price offer</span>
         <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'inherit' }}>Cancel</button>
       </div>
-      <PRow label="Rental fee"  value={rental}    onChange={setRental} />
-      <PRow label="Insurance"   value={insurance} onChange={setInsurance} />
-      <PRow label="Deposit"     value={deposit}   onChange={setDeposit} />
+      <PRow label="Rental fee" value={rental} onChange={setRental} />
+      <PRow label="Insurance"  value={insurance} onChange={setInsurance} />
+      <PRow
+        label="Deposit"
+        value={deposit}
+        onChange={setDeposit}
+        extra={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+            <span style={{ fontSize: '0.64rem', fontWeight: 700, color: tierColor }}>● {tier}</span>
+            {renterDiscountPct > 0 && (
+              <span style={{ fontSize: '0.62rem', color: 'rgba(34,197,94,0.8)' }}>−{renterDiscountPct}% renter</span>
+            )}
+          </div>
+        }
+      />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0 14px', borderTop: '1px solid rgba(255,255,255,0.06)', marginBottom: 4 }}>
         <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>Total / day</span>
         <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f97316', letterSpacing: '-0.03em' }}>฿{fmt(total)}</span>
@@ -301,7 +320,13 @@ export default function ChatDetailScreen({ chat, user, onBack, onDealAccepted })
 
       {/* Owner price panel */}
       {showPriceInput && iAmOwner && (
-        <OwnerPricePanel onSend={sendPriceOffer} onCancel={() => setShowPriceInput(false)} />
+        <OwnerPricePanel
+          onSend={sendPriceOffer}
+          onCancel={() => setShowPriceInput(false)}
+          initialRental={carData?.price || 1500}
+          initialDeposit={calcFinalDeposit(carData?.price || 1500, chat.renterDocuments)}
+          renterDiscountPct={calcDepositDiscount(chat.renterDocuments)}
+        />
       )}
 
       {/* Input bar */}
