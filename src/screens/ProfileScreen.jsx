@@ -32,7 +32,7 @@ function DocUploadModal({ docLabel, docKey, user, onClose, onDone }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 1100, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px' }}>
         {step === 'upload' && (
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '1.4rem', cursor: 'pointer', lineHeight: 1, padding: 0 }}>←</button>

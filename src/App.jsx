@@ -383,7 +383,7 @@ export default function App() {
     )
   }
 
-  const hideNav = ['auth', 'onboarding', 'add-car', 'chat'].includes(screen)
+  const hideNav = ['auth', 'onboarding', 'add-car', 'chat', 'booking', 'rental', 'admin'].includes(screen)
 
   return (
     <div style={{ width: '100%', minHeight: '100dvh', position: 'relative', background: 'var(--bg)' }}>
